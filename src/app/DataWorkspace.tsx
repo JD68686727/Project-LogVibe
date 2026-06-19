@@ -6,6 +6,7 @@ import { FilterBar } from '@/features/filtering/components/FilterBar';
 import { useSortedRows } from '@/features/table/hooks/useSortedRows';
 import { DataTable } from '@/features/table/components/DataTable';
 import { ExportButton } from '@/features/export/components/ExportButton';
+import { StatsPanel } from '@/features/stats/components/StatsPanel';
 import { useChartConfig } from '@/features/visualization/hooks/useChartConfig';
 import { usePresets } from '@/features/presets/hooks/usePresets';
 import { PresetBar } from '@/features/presets/components/PresetBar';
@@ -75,6 +76,8 @@ export function DataWorkspace({ dataset }: DataWorkspaceProps) {
       <div className="flex items-center justify-end">
         <ExportButton dataset={dataset} order={order} />
       </div>
+
+      <StatsPanel dataset={dataset} order={filteredOrder} />
 
       <DataTable
         dataset={dataset}
