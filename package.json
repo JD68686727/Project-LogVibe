@@ -4,6 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "description": "LogVibe — a privacy-first, local CSV & server log analyzer. 100% client-side.",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
