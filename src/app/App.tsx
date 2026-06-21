@@ -6,6 +6,7 @@ import { DropZone } from '@/features/ingestion/components/DropZone';
 import { ParseStatus } from '@/features/ingestion/components/ParseStatus';
 import { useWorkspace } from '@/features/workspace/hooks/useWorkspace';
 import { WorkspaceBar } from '@/features/workspace/components/WorkspaceBar';
+import { ChartSkeleton } from '@/components/ChartSkeleton';
 import { DataWorkspace } from './DataWorkspace';
 
 const CompareView = lazy(() =>
@@ -99,7 +100,7 @@ export function App() {
             {mode === 'compare' && (
               <Suspense
                 fallback={
-                  <div className="h-96 animate-pulse rounded-xl border border-slate-200 bg-white" />
+                  <ChartSkeleton className="h-96" label="Loading comparison…" />
                 }
               >
                 <CompareView files={ws.files} />

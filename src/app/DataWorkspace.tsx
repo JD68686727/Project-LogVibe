@@ -10,6 +10,7 @@ import { StatsPanel } from '@/features/stats/components/StatsPanel';
 import { useChartConfig } from '@/features/visualization/hooks/useChartConfig';
 import { usePresets } from '@/features/presets/hooks/usePresets';
 import { PresetBar } from '@/features/presets/components/PresetBar';
+import { ChartSkeleton } from '@/components/ChartSkeleton';
 
 // Recharts is heavy (~d3 deps); load the chart panel only once a file is open
 // so the initial drop-zone bundle stays lean. `useChartConfig` itself pulls no
@@ -86,11 +87,7 @@ export function DataWorkspace({ dataset }: DataWorkspaceProps) {
         onToggleSort={toggleSort}
       />
 
-      <Suspense
-        fallback={
-          <div className="h-80 animate-pulse rounded-xl border border-slate-200 bg-white" />
-        }
-      >
+      <Suspense fallback={<ChartSkeleton className="h-80" />}>
         <ChartPanel dataset={dataset} chart={chart} />
       </Suspense>
     </div>
