@@ -12,6 +12,12 @@ dist-ssr
 *.local
 *.tsbuildinfo
 
+# Playwright
+/test-results
+/playwright-report
+/blob-report
+/.cache
+
 # Editor
 .vscode/*
 !.vscode/extensions.json

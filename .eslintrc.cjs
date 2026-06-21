@@ -11,6 +11,13 @@ module.exports = {
   parser: '@typescript-eslint/parser',
   parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },
   plugins: ['react-refresh'],
+  overrides: [
+    {
+      // Tooling + E2E run in Node, not the browser.
+      files: ['*.config.ts', 'e2e/**/*.ts'],
+      env: { node: true, browser: false },
+    },
+  ],
   rules: {
     'react-refresh/only-export-components': [
       'warn',

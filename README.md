@@ -85,15 +85,18 @@ drop-zone bundle stays small.
 
 ## Testing
 
-Pure logic is covered by a [Vitest](https://vitest.dev) unit suite:
+Two layers, both run in CI on every push and PR:
 
 ```bash
-npm test         # run the suite once
+npm test          # Vitest unit suite (pure logic), run once
 npm run test:watch
+npm run e2e        # Playwright smoke tests (real browser flows)
 ```
 
-Tests live next to the code as `src/**/*.test.ts` and exercise schema inference,
-filtering, aggregation, date bucketing, column stats, comparison, and CSV export.
+- **Unit** — `src/**/*.test.ts` exercise schema inference, filtering, aggregation,
+  date bucketing, column stats, comparison, and CSV export.
+- **E2E** — `e2e/*.spec.ts` drive Chromium through the core journeys (load → filter
+  → chart, and multi-file compare). Playwright boots the dev server itself.
 
 ## Scripts
 
@@ -106,6 +109,7 @@ filtering, aggregation, date bucketing, column stats, comparison, and CSV export
 | `npm run format` | Format with Prettier |
 | `npm test` | Run the Vitest unit suite |
 | `npm run test:watch` | Run Vitest in watch mode |
+| `npm run e2e` | Run the Playwright E2E smoke tests |
 
 ## License
 
