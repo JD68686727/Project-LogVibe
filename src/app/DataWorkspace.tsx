@@ -15,6 +15,7 @@ import { useChartConfig } from '@/features/visualization/hooks/useChartConfig';
 import { usePresets } from '@/features/presets/hooks/usePresets';
 import { PresetBar } from '@/features/presets/components/PresetBar';
 import { ChartSkeleton } from '@/components/ChartSkeleton';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // Recharts is heavy (~d3 deps); load the chart panel only once a file is open
 // so the initial drop-zone bundle stays lean. `useChartConfig` itself pulls no
@@ -153,9 +154,29 @@ export function DataWorkspace({
         onToggleSort={toggleSort}
       />
 
-      <Suspense fallback={<ChartSkeleton className="h-80" />}>
-        <ChartPanel dataset={dataset} chart={chart} />
-      </Suspense>
+      <ErrorBoundary
+        fallback={(_error, reset) => (
+          <div
+            role="alert"
+            className="flex h-80 flex-col items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 text-center"
+          >
+            <p className="text-sm font-medium text-rose-700">
+              Chart failed to render
+            </p>
+            <button
+              type="button"
+              onClick={reset}
+              className="rounded-md border border-rose-300 bg-white px-3 py-1 text-sm font-medium text-rose-700 hover:bg-rose-100"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+      >
+        <Suspense fallback={<ChartSkeleton className="h-80" />}>
+          <ChartPanel dataset={dataset} chart={chart} />
+        </Suspense>
+      </ErrorBoundary>
     </div>
   );
 }

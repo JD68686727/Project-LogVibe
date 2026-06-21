@@ -8,6 +8,7 @@ import { useWorkspace } from '@/features/workspace/hooks/useWorkspace';
 import { WorkspaceBar } from '@/features/workspace/components/WorkspaceBar';
 import { useSharedView } from '@/features/sharing/hooks/useSharedView';
 import { ChartSkeleton } from '@/components/ChartSkeleton';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { DataWorkspace } from './DataWorkspace';
 
 const CompareView = lazy(() =>
@@ -102,13 +103,33 @@ export function App() {
             )}
 
             {mode === 'compare' && (
-              <Suspense
-                fallback={
-                  <ChartSkeleton className="h-96" label="Loading comparison…" />
-                }
+              <ErrorBoundary
+                fallback={(_error, reset) => (
+                  <div
+                    role="alert"
+                    className="flex h-96 flex-col items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 text-center"
+                  >
+                    <p className="text-sm font-medium text-rose-700">
+                      Comparison failed to render
+                    </p>
+                    <button
+                      type="button"
+                      onClick={reset}
+                      className="rounded-md border border-rose-300 bg-white px-3 py-1 text-sm font-medium text-rose-700 hover:bg-rose-100"
+                    >
+                      Try again
+                    </button>
+                  </div>
+                )}
               >
-                <CompareView files={ws.files} />
-              </Suspense>
+                <Suspense
+                  fallback={
+                    <ChartSkeleton className="h-96" label="Loading comparison…" />
+                  }
+                >
+                  <CompareView files={ws.files} />
+                </Suspense>
+              </ErrorBoundary>
             )}
           </div>
         )}

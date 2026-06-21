@@ -1,7 +1,9 @@
 import { defineConfig } from 'vitest/config';
 import { fileURLToPath, URL } from 'node:url';
 
-// Pure-logic unit tests run in Node (no DOM needed). Alias mirrors vite.config.ts.
+// Pure-logic tests run in Node (default, fast). Hook/component tests opt into
+// jsdom per-file via a `// @vitest-environment jsdom` docblock. Alias mirrors
+// vite.config.ts.
 export default defineConfig({
   resolve: {
     alias: {
@@ -9,7 +11,9 @@ export default defineConfig({
     },
   },
   test: {
+    // `globals` lets React Testing Library auto-register cleanup between tests.
+    globals: true,
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.{ts,tsx}'],
   },
 });

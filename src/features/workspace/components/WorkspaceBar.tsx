@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import type { LoadedFile, WorkspaceMode } from '@/types/workspace';
 import { cn } from '@/utils/cn';
-import { ACCEPTED, isAccepted } from '@/features/ingestion/acceptedTypes';
+import { ACCEPTED, validateFile } from '@/features/ingestion/acceptedTypes';
 
 export interface WorkspaceBarProps {
   files: LoadedFile[];
@@ -35,7 +35,7 @@ export function WorkspaceBar({
 
   const handlePick = (fileList: FileList | null) => {
     const file = fileList?.[0];
-    if (file && isAccepted(file)) onAddFile(file);
+    if (file && validateFile(file).ok) onAddFile(file);
     if (inputRef.current) inputRef.current.value = ''; // allow re-picking same file
   };
 

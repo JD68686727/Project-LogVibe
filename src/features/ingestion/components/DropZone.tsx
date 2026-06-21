@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState, type DragEvent } from 'react';
 import type { ParseStatus } from '@/types/dataset';
 import { cn } from '@/utils/cn';
-import { ACCEPTED, isAccepted } from '../acceptedTypes';
+import { ACCEPTED, validateFile } from '../acceptedTypes';
 
 export interface DropZoneProps {
   status: ParseStatus;
@@ -25,8 +25,9 @@ export function DropZone({ status, progress, onFileSelected }: DropZoneProps) {
       setRejected(null);
       const file = files?.[0];
       if (!file) return;
-      if (!isAccepted(file)) {
-        setRejected(`Unsupported file type. Accepted: ${ACCEPTED.join(', ')}`);
+      const validation = validateFile(file);
+      if (!validation.ok) {
+        setRejected(validation.reason);
         return;
       }
       onFileSelected(file);
