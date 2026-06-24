@@ -1,5 +1,5 @@
 import type { ChartConfig } from './chart';
-import type { ColumnFilter } from './filter';
+import type { ColumnFilter, FilterGroup } from './filter';
 import type { PivotConfig } from './pivot';
 import type { ColumnViewItem } from './table';
 
@@ -13,7 +13,10 @@ export interface SavedView {
   name: string;
   /** Schema fingerprint (column keys + types) this view applies to. */
   datasetSignature: string;
-  filters: ColumnFilter[];
+  /** Condition groups (AND within, OR between). */
+  groups?: FilterGroup[];
+  /** Legacy flat filters from pre-groups saved views; normalized on apply. */
+  filters?: ColumnFilter[];
   chart: ChartConfig;
   /** Column visibility + order. Optional for back-compat with older saved views. */
   columns?: ColumnViewItem[];

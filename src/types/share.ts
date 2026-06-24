@@ -1,5 +1,5 @@
 import type { ChartConfig } from './chart';
-import type { ColumnFilter } from './filter';
+import type { FilterGroup } from './filter';
 import type { PivotConfig } from './pivot';
 import type { ColumnViewItem, SortKey } from './table';
 
@@ -9,7 +9,8 @@ import type { ColumnViewItem, SortKey } from './table';
  * own file and gets your filters / search / sort / chart / columns applied.
  */
 export interface ViewState {
-  filters: ColumnFilter[];
+  /** Condition groups (AND within, OR between). */
+  groups: FilterGroup[];
   query: string;
   /** Multi-column sort, primary first. */
   sort: SortKey[];

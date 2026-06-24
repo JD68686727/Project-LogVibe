@@ -3,8 +3,13 @@ import type { ViewState } from '@/types/share';
 import { decodeView, encodeView } from './encodeView';
 
 const view: ViewState = {
-  filters: [
-    { id: 'f1', columnKey: 'status_code', operator: 'gte', value: '500' },
+  groups: [
+    {
+      id: 'g1',
+      filters: [
+        { id: 'f1', columnKey: 'status_code', operator: 'gte', value: '500' },
+      ],
+    },
   ],
   query: 'payments',
   sort: [{ columnKey: 'latency', direction: 'desc' }],
@@ -56,9 +61,27 @@ describe('encodeView / decodeView', () => {
   });
 
   it('leaves pivot undefined for a legacy token without one', () => {
-    const { filters, query, sort, chart, columns } = view;
-    const legacy = { filters, query, sort, chart, columns };
+    const { groups, query, sort, chart, columns } = view;
+    const legacy = { groups, query, sort, chart, columns };
     expect(decodeView(btoaSafe(JSON.stringify(legacy)))?.pivot).toBeUndefined();
+  });
+
+  it('wraps a legacy flat-filters token into a single group', () => {
+    const legacy = {
+      query: '',
+      sort: [],
+      chart: view.chart,
+      columns: view.columns,
+      filters: [{ id: 'f1', columnKey: 'level', operator: 'equals', value: 'INFO' }],
+    };
+    expect(decodeView(btoaSafe(JSON.stringify(legacy)))?.groups).toEqual([
+      {
+        id: expect.any(String),
+        filters: [
+          { id: 'f1', columnKey: 'level', operator: 'equals', value: 'INFO' },
+        ],
+      },
+    ]);
   });
 });
 

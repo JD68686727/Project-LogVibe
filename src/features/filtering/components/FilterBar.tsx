@@ -1,13 +1,15 @@
 import type { Dataset } from '@/types/dataset';
-import type { ColumnFilter } from '@/types/filter';
+import type { ColumnFilter, FilterGroup } from '@/types/filter';
 import { FilterRow } from './FilterRow';
 
 export interface FilterBarProps {
   dataset: Dataset;
-  filters: ColumnFilter[];
-  onAdd: () => void;
-  onUpdate: (id: string, patch: Partial<ColumnFilter>) => void;
-  onRemove: (id: string) => void;
+  groups: FilterGroup[];
+  onAddGroup: () => void;
+  onAddCondition: (groupId: string) => void;
+  onUpdate: (groupId: string, filterId: string, patch: Partial<ColumnFilter>) => void;
+  onRemoveFilter: (groupId: string, filterId: string) => void;
+  onRemoveGroup: (groupId: string) => void;
   onClear: () => void;
   query: string;
   onQueryChange: (query: string) => void;
@@ -15,12 +17,19 @@ export interface FilterBarProps {
   totalCount: number;
 }
 
+const addBtn =
+  'rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700';
+const linkBtn =
+  'text-xs font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300';
+
 export function FilterBar({
   dataset,
-  filters,
-  onAdd,
+  groups,
+  onAddGroup,
+  onAddCondition,
   onUpdate,
-  onRemove,
+  onRemoveFilter,
+  onRemoveGroup,
   onClear,
   query,
   onQueryChange,
@@ -93,7 +102,7 @@ export function FilterBar({
         </div>
 
         <div className="flex items-center gap-2">
-          {filters.length > 0 && (
+          {groups.length > 0 && (
             <button
               type="button"
               onClick={onClear}
@@ -102,27 +111,71 @@ export function FilterBar({
               Clear all
             </button>
           )}
-          <button
-            type="button"
-            onClick={onAdd}
-            className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
-          >
+          <button type="button" onClick={onAddGroup} className={addBtn}>
             + Add filter
           </button>
         </div>
       </div>
 
-      {filters.length > 0 && (
+      {groups.length > 0 && (
         <div className="mt-3 flex flex-col gap-2">
-          {filters.map((filter) => (
-            <FilterRow
-              key={filter.id}
-              dataset={dataset}
-              filter={filter}
-              onChange={(patch) => onUpdate(filter.id, patch)}
-              onRemove={() => onRemove(filter.id)}
-            />
+          {groups.map((group, gi) => (
+            <div key={group.id}>
+              {gi > 0 && (
+                <div className="my-1 flex items-center gap-2" aria-hidden>
+                  <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">
+                    or
+                  </span>
+                  <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+                </div>
+              )}
+              <div className="rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-800 dark:bg-slate-950/40">
+                <div className="flex flex-col gap-1.5">
+                  {group.filters.map((filter, fi) => (
+                    <div key={filter.id}>
+                      {fi > 0 && (
+                        <div className="px-1 py-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                          and
+                        </div>
+                      )}
+                      <FilterRow
+                        dataset={dataset}
+                        filter={filter}
+                        onChange={(patch) => onUpdate(group.id, filter.id, patch)}
+                        onRemove={() => onRemoveFilter(group.id, filter.id)}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 flex items-center justify-between px-1">
+                  <button
+                    type="button"
+                    onClick={() => onAddCondition(group.id)}
+                    className={linkBtn}
+                  >
+                    + AND condition
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveGroup(group.id)}
+                    aria-label="Remove group"
+                    className="text-xs font-medium text-slate-400 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-400"
+                  >
+                    Remove group
+                  </button>
+                </div>
+              </div>
+            </div>
           ))}
+
+          <button
+            type="button"
+            onClick={onAddGroup}
+            className="self-start rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-500 hover:border-brand-400 hover:text-brand-600 dark:border-slate-700 dark:text-slate-400 dark:hover:border-brand-500 dark:hover:text-brand-300"
+          >
+            + OR group
+          </button>
         </div>
       )}
     </div>

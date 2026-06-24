@@ -4,6 +4,7 @@ import type { SavedView } from '@/types/view';
 import type { ViewState } from '@/types/share';
 import { useFilters } from '@/features/filtering/hooks/useFilters';
 import { FilterBar } from '@/features/filtering/components/FilterBar';
+import { normalizeFilterGroups } from '@/lib/filter/normalizeGroups';
 import { useSortedRows } from '@/features/table/hooks/useSortedRows';
 import { DataTable } from '@/features/table/components/DataTable';
 import { useColumnView } from '@/features/table/hooks/useColumnView';
@@ -57,7 +58,7 @@ export function DataWorkspace({
     filtersApi.filteredOrder,
   );
 
-  const { replaceFilters, filters, filteredOrder, query, setQuery } = filtersApi;
+  const { replaceGroups, groups, filteredOrder, query, setQuery } = filtersApi;
   const { applyConfig, config: chartConfig } = chart;
   const { applyView, view: columnViewState, visible: visibleColumns } = columnView;
   const { applyConfig: applyPivot, config: pivotConfig } = pivot;
@@ -65,20 +66,20 @@ export function DataWorkspace({
   // The shareable view, built only when the Share button is clicked.
   const getView = useCallback(
     (): ViewState => ({
-      filters,
+      groups,
       query,
       sort: sortKeys,
       chart: chartConfig,
       columns: columnViewState,
       pivot: pivotConfig,
     }),
-    [filters, query, sortKeys, chartConfig, columnViewState, pivotConfig],
+    [groups, query, sortKeys, chartConfig, columnViewState, pivotConfig],
   );
 
   // Apply a view from a shared link once, now that the dataset exists.
   useEffect(() => {
     if (!pending) return;
-    replaceFilters(pending.filters);
+    replaceGroups(pending.groups);
     setQuery(pending.query);
     setSort(pending.sort);
     applyConfig(pending.chart);
@@ -87,7 +88,7 @@ export function DataWorkspace({
     onConsumePending();
   }, [
     pending,
-    replaceFilters,
+    replaceGroups,
     setQuery,
     setSort,
     applyConfig,
@@ -98,18 +99,18 @@ export function DataWorkspace({
 
   const handleApply = useCallback(
     (view: SavedView) => {
-      replaceFilters(view.filters);
+      replaceGroups(normalizeFilterGroups(view.groups, view.filters));
       applyConfig(view.chart);
       if (view.columns) applyView(view.columns);
       if (view.pivot) applyPivot(view.pivot);
     },
-    [replaceFilters, applyConfig, applyView, applyPivot],
+    [replaceGroups, applyConfig, applyView, applyPivot],
   );
 
   const handleSave = useCallback(
     (name: string) =>
-      presets.savePreset(name, filters, chartConfig, columnViewState, pivotConfig),
-    [presets, filters, chartConfig, columnViewState, pivotConfig],
+      presets.savePreset(name, groups, chartConfig, columnViewState, pivotConfig),
+    [presets, groups, chartConfig, columnViewState, pivotConfig],
   );
 
   return (
@@ -123,10 +124,12 @@ export function DataWorkspace({
 
       <FilterBar
         dataset={dataset}
-        filters={filters}
-        onAdd={filtersApi.addFilter}
+        groups={groups}
+        onAddGroup={filtersApi.addGroup}
+        onAddCondition={filtersApi.addCondition}
         onUpdate={filtersApi.updateFilter}
-        onRemove={filtersApi.removeFilter}
+        onRemoveFilter={filtersApi.removeFilter}
+        onRemoveGroup={filtersApi.removeGroup}
         onClear={filtersApi.clearFilters}
         query={query}
         onQueryChange={filtersApi.setQuery}

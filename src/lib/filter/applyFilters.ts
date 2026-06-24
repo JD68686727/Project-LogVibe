@@ -4,7 +4,7 @@ import type {
   ColumnType,
   Dataset,
 } from '@/types/dataset';
-import type { ColumnFilter } from '@/types/filter';
+import type { ColumnFilter, FilterGroup } from '@/types/filter';
 import { getOperator } from './operators';
 
 /** Converts a cell to a comparable number for ordered/date operators. */
@@ -41,6 +41,23 @@ export function isFilterComplete(filter: ColumnFilter): boolean {
 }
 
 type Predicate = (cell: CellValue) => boolean;
+
+interface CompiledFilter {
+  colIdx: number;
+  predicate: Predicate;
+}
+
+/** Compiles complete filters to (column, predicate) pairs; unknown columns dropped. */
+function compileFilters(dataset: Dataset, filters: ColumnFilter[]): CompiledFilter[] {
+  return filters
+    .filter(isFilterComplete)
+    .map((f) => {
+      const colIdx = dataset.columnIndex[f.columnKey];
+      if (colIdx == null) return null;
+      return { colIdx, predicate: buildPredicate(f, dataset.columns[colIdx]) };
+    })
+    .filter((x): x is CompiledFilter => x !== null);
+}
 
 /** Compiles a single filter into a fast predicate (operands parsed once). */
 function buildPredicate(filter: ColumnFilter, column: ColumnSchema): Predicate {
@@ -127,24 +144,39 @@ export function applyFilters(
   baseOrder?: number[],
 ): number[] {
   const base = baseOrder ?? dataset.rows.map((_, i) => i);
-
-  const compiled = filters
-    .filter(isFilterComplete)
-    .map((f) => {
-      const colIdx = dataset.columnIndex[f.columnKey];
-      if (colIdx == null) return null;
-      return { colIdx, predicate: buildPredicate(f, dataset.columns[colIdx]) };
-    })
-    .filter((x): x is { colIdx: number; predicate: Predicate } => x !== null);
-
+  const compiled = compileFilters(dataset, filters);
   if (compiled.length === 0) return base;
 
   const { rows } = dataset;
   return base.filter((rowIdx) => {
     const row = rows[rowIdx];
-    for (const { colIdx, predicate } of compiled) {
-      if (!predicate(row[colIdx])) return false;
-    }
-    return true;
+    return compiled.every(({ colIdx, predicate }) => predicate(row[colIdx]));
+  });
+}
+
+/**
+ * Returns the indices of rows matching ANY group (OR), where a group matches
+ * when ALL its complete filters pass (AND) — i.e. `(A AND B) OR (C)`. Groups
+ * with no complete filters are ignored; if no group has any, `base` passes
+ * through unfiltered. A single group reproduces `applyFilters`.
+ */
+export function applyFilterGroups(
+  dataset: Dataset,
+  groups: FilterGroup[],
+  baseOrder?: number[],
+): number[] {
+  const base = baseOrder ?? dataset.rows.map((_, i) => i);
+  const compiledGroups = groups
+    .map((g) => compileFilters(dataset, g.filters))
+    .filter((g) => g.length > 0);
+
+  if (compiledGroups.length === 0) return base;
+
+  const { rows } = dataset;
+  return base.filter((rowIdx) => {
+    const row = rows[rowIdx];
+    return compiledGroups.some((group) =>
+      group.every(({ colIdx, predicate }) => predicate(row[colIdx])),
+    );
   });
 }

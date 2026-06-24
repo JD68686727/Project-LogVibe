@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Dataset } from '@/types/dataset';
 import type { ChartConfig } from '@/types/chart';
-import type { ColumnFilter } from '@/types/filter';
+import type { FilterGroup } from '@/types/filter';
 import type { PivotConfig } from '@/types/pivot';
 import type { ColumnViewItem } from '@/types/table';
 import type { SavedView } from '@/types/view';
@@ -19,7 +19,7 @@ export interface UsePresets {
   views: SavedView[];
   savePreset: (
     name: string,
-    filters: ColumnFilter[],
+    groups: FilterGroup[],
     chart: ChartConfig,
     columns: ColumnViewItem[],
     pivot: PivotConfig,
@@ -40,7 +40,7 @@ export function usePresets(dataset: Dataset): UsePresets {
   const savePreset = useCallback(
     (
       name: string,
-      filters: ColumnFilter[],
+      groups: FilterGroup[],
       chart: ChartConfig,
       columns: ColumnViewItem[],
       pivot: PivotConfig,
@@ -49,7 +49,7 @@ export function usePresets(dataset: Dataset): UsePresets {
         id: nextId(),
         name: name.trim(),
         datasetSignature: signature,
-        filters,
+        groups,
         chart,
         columns,
         pivot,

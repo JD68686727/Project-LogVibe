@@ -1,6 +1,7 @@
 import type { ViewState } from '@/types/share';
 import type { PivotConfig } from '@/types/pivot';
 import type { SortKey } from '@/types/table';
+import { normalizeFilterGroups } from '@/lib/filter/normalizeGroups';
 
 /** URL-safe base64 of a UTF-8 string (browser-native, no deps). */
 function toBase64Url(text: string): string {
@@ -49,12 +50,13 @@ function isPivotConfig(value: unknown): value is PivotConfig {
   );
 }
 
-/** Validates the non-sort fields; `sort` is normalised separately. */
-function isViewBase(value: unknown): value is Omit<ViewState, 'sort'> {
+/** Validates the shared fields; `sort`/`groups` are normalised separately. */
+function isViewBase(value: unknown): boolean {
   if (typeof value !== 'object' || value === null) return false;
   const v = value as Record<string, unknown>;
   return (
-    Array.isArray(v.filters) &&
+    // Accept the groups model and legacy flat `filters` links.
+    (Array.isArray(v.groups) || Array.isArray(v.filters)) &&
     typeof v.query === 'string' &&
     typeof v.chart === 'object' &&
     v.chart !== null &&
@@ -68,9 +70,14 @@ export function decodeView(token: string): ViewState | null {
     const parsed: unknown = JSON.parse(fromBase64Url(token));
     if (!isViewBase(parsed)) return null;
     const raw = parsed as Record<string, unknown>;
-    const sort = normalizeSort(raw.sort);
-    const pivot = isPivotConfig(raw.pivot) ? raw.pivot : undefined;
-    return { ...parsed, sort, pivot };
+    return {
+      groups: normalizeFilterGroups(raw.groups, raw.filters),
+      query: raw.query as string,
+      sort: normalizeSort(raw.sort),
+      chart: raw.chart as ViewState['chart'],
+      columns: raw.columns as ViewState['columns'],
+      pivot: isPivotConfig(raw.pivot) ? raw.pivot : undefined,
+    };
   } catch {
     return null;
   }

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { ColumnFilter } from '@/types/filter';
-import { applyFilters, isFilterComplete } from './applyFilters';
+import type { FilterGroup } from '@/types/filter';
+import { applyFilters, applyFilterGroups, isFilterComplete } from './applyFilters';
 import { makeDataset } from '@/test/factory';
 
 const ds = makeDataset(
@@ -98,6 +99,44 @@ describe('applyFilters', () => {
       [4, 0],
     );
     expect(out).toEqual([4, 0]);
+  });
+});
+
+const group = (id: string, filters: ColumnFilter[]): FilterGroup => ({ id, filters });
+
+describe('applyFilterGroups', () => {
+  it('returns all rows when there are no groups or no complete filters', () => {
+    expect(applyFilterGroups(ds, [])).toEqual([0, 1, 2, 3, 4]);
+    expect(
+      applyFilterGroups(ds, [group('g', [filter({ operator: 'gt', value: '' })])]),
+    ).toEqual([0, 1, 2, 3, 4]);
+  });
+
+  it('AND-s filters within a group', () => {
+    const out = applyFilterGroups(ds, [
+      group('g', [
+        filter({ operator: 'contains', value: 'error' }),
+        filter({ columnKey: 'code', operator: 'gte', value: '503' }),
+      ]),
+    ]);
+    expect(out).toEqual([3]);
+  });
+
+  it('OR-s separate groups (union, original order preserved)', () => {
+    // (level contains INFO) OR (code >= 500)
+    const out = applyFilterGroups(ds, [
+      group('g1', [filter({ operator: 'contains', value: 'info' })]),
+      group('g2', [filter({ columnKey: 'code', operator: 'gte', value: '500' })]),
+    ]);
+    expect(out).toEqual([0, 2, 3, 4]); // INFO rows 0,4 + code>=500 rows 2,3
+  });
+
+  it('ignores groups with no complete filters', () => {
+    const out = applyFilterGroups(ds, [
+      group('g1', [filter({ columnKey: 'code', operator: 'equals', value: '500' })]),
+      group('g2', [filter({ operator: 'contains', value: '' })]), // incomplete → ignored
+    ]);
+    expect(out).toEqual([2]); // not all rows — the empty group doesn't widen to everything
   });
 });
 

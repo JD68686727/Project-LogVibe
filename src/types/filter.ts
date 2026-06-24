@@ -26,6 +26,17 @@ export interface ColumnFilter {
   value2?: string;
 }
 
+/**
+ * A group of conditions that are AND-ed together. The analyze view holds a list
+ * of these; the groups themselves are OR-ed — i.e. `(A AND B) OR (C)`. A single
+ * group reproduces the original flat all-AND behaviour.
+ */
+export interface FilterGroup {
+  /** Stable unique id for React keys & updates. */
+  id: string;
+  filters: ColumnFilter[];
+}
+
 export interface OperatorMeta {
   value: FilterOperator;
   label: string;
