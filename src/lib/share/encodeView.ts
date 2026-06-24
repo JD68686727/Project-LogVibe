@@ -1,4 +1,5 @@
 import type { ViewState } from '@/types/share';
+import type { PivotConfig } from '@/types/pivot';
 import type { SortKey } from '@/types/table';
 
 /** URL-safe base64 of a UTF-8 string (browser-native, no deps). */
@@ -37,6 +38,17 @@ function normalizeSort(raw: unknown): SortKey[] {
   return [];
 }
 
+function isPivotConfig(value: unknown): value is PivotConfig {
+  if (typeof value !== 'object' || value === null) return false;
+  const p = value as Record<string, unknown>;
+  return (
+    (p.rowKey === null || typeof p.rowKey === 'string') &&
+    (p.colKey === null || typeof p.colKey === 'string') &&
+    (p.aggregation === 'count' || p.aggregation === 'sum' || p.aggregation === 'avg') &&
+    (p.measureKey === null || typeof p.measureKey === 'string')
+  );
+}
+
 /** Validates the non-sort fields; `sort` is normalised separately. */
 function isViewBase(value: unknown): value is Omit<ViewState, 'sort'> {
   if (typeof value !== 'object' || value === null) return false;
@@ -55,8 +67,10 @@ export function decodeView(token: string): ViewState | null {
   try {
     const parsed: unknown = JSON.parse(fromBase64Url(token));
     if (!isViewBase(parsed)) return null;
-    const sort = normalizeSort((parsed as Record<string, unknown>).sort);
-    return { ...parsed, sort };
+    const raw = parsed as Record<string, unknown>;
+    const sort = normalizeSort(raw.sort);
+    const pivot = isPivotConfig(raw.pivot) ? raw.pivot : undefined;
+    return { ...parsed, sort, pivot };
   } catch {
     return null;
   }
