@@ -1,5 +1,6 @@
 import type { ChartConfig } from './chart';
 import type { ColumnFilter } from './filter';
+import type { PivotConfig } from './pivot';
 import type { ColumnViewItem } from './table';
 
 /**
@@ -16,5 +17,7 @@ export interface SavedView {
   chart: ChartConfig;
   /** Column visibility + order. Optional for back-compat with older saved views. */
   columns?: ColumnViewItem[];
+  /** Pivot cross-tab config. Optional for back-compat with older saved views. */
+  pivot?: PivotConfig;
   createdAt: number;
 }

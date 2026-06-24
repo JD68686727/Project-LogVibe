@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Dataset } from '@/types/dataset';
 import type { ChartConfig } from '@/types/chart';
 import type { ColumnFilter } from '@/types/filter';
+import type { PivotConfig } from '@/types/pivot';
 import type { ColumnViewItem } from '@/types/table';
 import type { SavedView } from '@/types/view';
 import {
@@ -21,6 +22,7 @@ export interface UsePresets {
     filters: ColumnFilter[],
     chart: ChartConfig,
     columns: ColumnViewItem[],
+    pivot: PivotConfig,
   ) => void;
   deletePreset: (id: string) => void;
 }
@@ -41,6 +43,7 @@ export function usePresets(dataset: Dataset): UsePresets {
       filters: ColumnFilter[],
       chart: ChartConfig,
       columns: ColumnViewItem[],
+      pivot: PivotConfig,
     ) => {
       const view: SavedView = {
         id: nextId(),
@@ -49,6 +52,7 @@ export function usePresets(dataset: Dataset): UsePresets {
         filters,
         chart,
         columns,
+        pivot,
         createdAt: Date.now(),
       };
       setViews(saveView(view));

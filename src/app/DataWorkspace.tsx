@@ -12,6 +12,7 @@ import { ExportButton } from '@/features/export/components/ExportButton';
 import { ShareButton } from '@/features/sharing/components/ShareButton';
 import { StatsPanel } from '@/features/stats/components/StatsPanel';
 import { PivotPanel } from '@/features/pivot/components/PivotPanel';
+import { usePivotConfig } from '@/features/pivot/hooks/usePivotConfig';
 import { useChartConfig } from '@/features/visualization/hooks/useChartConfig';
 import { usePresets } from '@/features/presets/hooks/usePresets';
 import { PresetBar } from '@/features/presets/components/PresetBar';
@@ -49,6 +50,7 @@ export function DataWorkspace({
   const filtersApi = useFilters(dataset);
   const chart = useChartConfig(dataset, filtersApi.filteredOrder);
   const columnView = useColumnView(dataset);
+  const pivot = usePivotConfig(dataset);
   const presets = usePresets(dataset);
   const { order, sortKeys, toggleSort, setSort } = useSortedRows(
     dataset,
@@ -58,6 +60,7 @@ export function DataWorkspace({
   const { replaceFilters, filters, filteredOrder, query, setQuery } = filtersApi;
   const { applyConfig, config: chartConfig } = chart;
   const { applyView, view: columnViewState, visible: visibleColumns } = columnView;
+  const { applyConfig: applyPivot, config: pivotConfig } = pivot;
 
   // The shareable view, built only when the Share button is clicked.
   const getView = useCallback(
@@ -67,8 +70,9 @@ export function DataWorkspace({
       sort: sortKeys,
       chart: chartConfig,
       columns: columnViewState,
+      pivot: pivotConfig,
     }),
-    [filters, query, sortKeys, chartConfig, columnViewState],
+    [filters, query, sortKeys, chartConfig, columnViewState, pivotConfig],
   );
 
   // Apply a view from a shared link once, now that the dataset exists.
@@ -79,6 +83,7 @@ export function DataWorkspace({
     setSort(pending.sort);
     applyConfig(pending.chart);
     applyView(pending.columns);
+    if (pending.pivot) applyPivot(pending.pivot);
     onConsumePending();
   }, [
     pending,
@@ -87,6 +92,7 @@ export function DataWorkspace({
     setSort,
     applyConfig,
     applyView,
+    applyPivot,
     onConsumePending,
   ]);
 
@@ -95,14 +101,15 @@ export function DataWorkspace({
       replaceFilters(view.filters);
       applyConfig(view.chart);
       if (view.columns) applyView(view.columns);
+      if (view.pivot) applyPivot(view.pivot);
     },
-    [replaceFilters, applyConfig, applyView],
+    [replaceFilters, applyConfig, applyView, applyPivot],
   );
 
   const handleSave = useCallback(
     (name: string) =>
-      presets.savePreset(name, filters, chartConfig, columnViewState),
-    [presets, filters, chartConfig, columnViewState],
+      presets.savePreset(name, filters, chartConfig, columnViewState, pivotConfig),
+    [presets, filters, chartConfig, columnViewState, pivotConfig],
   );
 
   return (
@@ -186,6 +193,7 @@ export function DataWorkspace({
       <PivotPanel
         dataset={dataset}
         order={filteredOrder}
+        pivot={pivot}
         onAddFilter={filtersApi.addColumnFilter}
       />
     </div>

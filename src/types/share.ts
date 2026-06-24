@@ -1,5 +1,6 @@
 import type { ChartConfig } from './chart';
 import type { ColumnFilter } from './filter';
+import type { PivotConfig } from './pivot';
 import type { ColumnViewItem, SortKey } from './table';
 
 /**
@@ -14,4 +15,6 @@ export interface ViewState {
   sort: SortKey[];
   chart: ChartConfig;
   columns: ColumnViewItem[];
+  /** Pivot cross-tab config. Optional for back-compat with pre-pivot links. */
+  pivot?: PivotConfig;
 }

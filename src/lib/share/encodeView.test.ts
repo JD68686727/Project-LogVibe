@@ -19,6 +19,12 @@ const view: ViewState = {
     { key: 'level', visible: true },
     { key: 'cached', visible: false },
   ],
+  pivot: {
+    rowKey: 'level',
+    colKey: 'cached',
+    aggregation: 'avg',
+    measureKey: 'latency',
+  },
 };
 
 describe('encodeView / decodeView', () => {
@@ -47,6 +53,12 @@ describe('encodeView / decodeView', () => {
     expect(decodeView(btoaSafe(JSON.stringify(legacy)))?.sort).toEqual([
       { columnKey: 'level', direction: 'asc' },
     ]);
+  });
+
+  it('leaves pivot undefined for a legacy token without one', () => {
+    const { filters, query, sort, chart, columns } = view;
+    const legacy = { filters, query, sort, chart, columns };
+    expect(decodeView(btoaSafe(JSON.stringify(legacy)))?.pivot).toBeUndefined();
   });
 });
 

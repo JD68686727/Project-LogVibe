@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { Dataset } from '@/types/dataset';
 import type { PivotAggregation } from '@/types/pivot';
@@ -6,8 +6,9 @@ import { OTHERS_BUCKET } from '@/types/pivot';
 import { cn } from '@/utils/cn';
 import { selectCls } from '@/utils/controls';
 import { formatNumber as fmt } from '@/utils/formatNumber';
+import { computePivot } from '@/lib/pivot/computePivot';
 import { categoricalFilter, type NewFilter } from '@/lib/stats/distributionFilter';
-import { usePivot } from '../hooks/usePivot';
+import type { UsePivotConfig } from '../hooks/usePivotConfig';
 
 const AGGREGATIONS: { value: PivotAggregation; label: string }[] = [
   { value: 'count', label: 'Count' },
@@ -19,6 +20,8 @@ export interface PivotPanelProps {
   dataset: Dataset;
   /** Filtered row indices to cross-tabulate. */
   order: number[];
+  /** Pivot config owned by the orchestrator (shared with links + presets). */
+  pivot: UsePivotConfig;
   /** When provided, cells become clickable to filter to that row × column. */
   onAddFilter?: (filter: NewFilter) => void;
 }
@@ -42,10 +45,20 @@ const colHead =
 const rowHead =
   'sticky left-0 z-10 max-w-[12rem] truncate bg-white px-3 py-1.5 text-left font-medium text-slate-700 dark:bg-slate-900 dark:text-slate-200';
 
-export function PivotPanel({ dataset, order, onAddFilter }: PivotPanelProps) {
+export function PivotPanel({
+  dataset,
+  order,
+  pivot,
+  onAddFilter,
+}: PivotPanelProps) {
   const [expanded, setExpanded] = useState(false);
-  const { config, numericColumns, result, setRow, setCol, setAggregation, setMeasure } =
-    usePivot(dataset, order, expanded);
+  const { config, numericColumns, setRow, setCol, setAggregation, setMeasure } = pivot;
+
+  // Gate the cross-tab pass on the panel being open — collapsed costs nothing.
+  const result = useMemo(
+    () => (expanded ? computePivot(dataset, order, config) : null),
+    [expanded, dataset, order, config],
+  );
 
   const colType = (key: string | null) =>
     key != null ? dataset.columns[dataset.columnIndex[key]]?.type : undefined;

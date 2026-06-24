@@ -3,7 +3,10 @@ import '@testing-library/jest-dom/vitest';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { Dataset } from '@/types/dataset';
+import type { NewFilter } from '@/lib/stats/distributionFilter';
 import { makeDataset, allRows } from '@/test/factory';
+import { usePivotConfig } from '../hooks/usePivotConfig';
 import { PivotPanel } from './PivotPanel';
 
 const ds = makeDataset(
@@ -18,15 +21,34 @@ const ds = makeDataset(
   ],
 );
 
+/** Supplies the controlled pivot config the way DataWorkspace does. */
+function Harness({
+  dataset = ds,
+  onAddFilter,
+}: {
+  dataset?: Dataset;
+  onAddFilter?: (filter: NewFilter) => void;
+}) {
+  const pivot = usePivotConfig(dataset);
+  return (
+    <PivotPanel
+      dataset={dataset}
+      order={allRows(dataset)}
+      pivot={pivot}
+      onAddFilter={onAddFilter}
+    />
+  );
+}
+
 describe('PivotPanel', () => {
   it('is collapsed until the header is clicked', () => {
-    render(<PivotPanel dataset={ds} order={allRows(ds)} />);
+    render(<Harness />);
     expect(screen.queryByTestId('pivot-table')).not.toBeInTheDocument();
   });
 
   it('clicking a cell filters to that row × column (two filters)', async () => {
     const onAddFilter = vi.fn();
-    render(<PivotPanel dataset={ds} order={allRows(ds)} onAddFilter={onAddFilter} />);
+    render(<Harness onAddFilter={onAddFilter} />);
 
     await userEvent.click(screen.getByRole('button', { name: 'Pivot table' }));
     expect(screen.getByTestId('pivot-table')).toBeInTheDocument();
@@ -48,7 +70,7 @@ describe('PivotPanel', () => {
   });
 
   it('does not render empty cells as filter buttons', async () => {
-    render(<PivotPanel dataset={ds} order={allRows(ds)} onAddFilter={vi.fn()} />);
+    render(<Harness onAddFilter={vi.fn()} />);
     await userEvent.click(screen.getByRole('button', { name: 'Pivot table' }));
     // y×q has a count of 0 → no button for it.
     expect(
