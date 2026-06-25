@@ -43,7 +43,7 @@ export function App() {
   return (
     <div className="min-h-screen">
       <header className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-        <div className="mx-auto flex max-w-[100rem] items-center gap-2 px-6 py-4">
+        <div className="mx-auto flex max-w-[100rem] items-center gap-2 px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-sm font-bold text-white">
             LV
           </div>
@@ -61,9 +61,9 @@ export function App() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[100rem] px-6 py-8">
+      <main className="mx-auto max-w-[100rem] px-4 py-6 sm:px-6 sm:py-8">
         {!hasFiles ? (
-          <div className="py-12">
+          <div className="py-6 sm:py-12">
             <DropZone
               status={status}
               progress={progress}
