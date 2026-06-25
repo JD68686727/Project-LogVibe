@@ -137,7 +137,7 @@ export function DataWorkspace({
         totalCount={dataset.rows.length}
       />
 
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <ColumnManager
           items={columnView.items}
           onToggle={columnView.toggle}
