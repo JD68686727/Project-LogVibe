@@ -9,6 +9,8 @@ export function defaultPivotConfig(dataset: Dataset): PivotConfig {
     colKey: (cols[1] ?? cols[0])?.key ?? null,
     aggregation: 'count',
     measureKey: null,
+    rowBucket: false,
+    colBucket: false,
   };
 }
 
@@ -20,6 +22,8 @@ export interface UsePivotConfig {
   setCol: (key: string) => void;
   setAggregation: (agg: PivotAggregation) => void;
   setMeasure: (key: string) => void;
+  setRowBucket: (on: boolean) => void;
+  setColBucket: (on: boolean) => void;
   /** Replaces the whole config (applying a shared link or saved view). */
   applyConfig: (config: PivotConfig) => void;
 }
@@ -49,6 +53,14 @@ export function usePivotConfig(dataset: Dataset): UsePivotConfig {
     (measureKey: string) => setConfig((p) => ({ ...p, measureKey })),
     [],
   );
+  const setRowBucket = useCallback(
+    (rowBucket: boolean) => setConfig((p) => ({ ...p, rowBucket })),
+    [],
+  );
+  const setColBucket = useCallback(
+    (colBucket: boolean) => setConfig((p) => ({ ...p, colBucket })),
+    [],
+  );
   const setAggregation = useCallback(
     (aggregation: PivotAggregation) =>
       setConfig((p) => {
@@ -62,5 +74,15 @@ export function usePivotConfig(dataset: Dataset): UsePivotConfig {
 
   const applyConfig = useCallback((next: PivotConfig) => setConfig(next), []);
 
-  return { config, numericColumns, setRow, setCol, setAggregation, setMeasure, applyConfig };
+  return {
+    config,
+    numericColumns,
+    setRow,
+    setCol,
+    setAggregation,
+    setMeasure,
+    setRowBucket,
+    setColBucket,
+    applyConfig,
+  };
 }

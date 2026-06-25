@@ -10,6 +10,10 @@ export interface PivotConfig {
   aggregation: PivotAggregation;
   /** Numeric column to aggregate; required (and only used) for sum / avg. */
   measureKey: string | null;
+  /** Bucket a numeric row axis into ranges instead of distinct values. */
+  rowBucket?: boolean;
+  /** Bucket a numeric column axis into ranges instead of distinct values. */
+  colBucket?: boolean;
 }
 
 export interface PivotResult {
@@ -26,6 +30,10 @@ export interface PivotResult {
   grandTotal: number;
   /** Largest single cell value, used to scale the heatmap shading. */
   max: number;
+  /** Per-row-value [lo, hi] bounds when the row axis is bucketed, else null. */
+  rowBounds: [number, number][] | null;
+  /** Per-col-value [lo, hi] bounds when the column axis is bucketed, else null. */
+  colBounds: [number, number][] | null;
 }
 
 /** Synthetic bucket label for values beyond the per-axis cap. Not filterable. */

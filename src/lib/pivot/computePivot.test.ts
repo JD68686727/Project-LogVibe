@@ -58,6 +58,28 @@ describe('computePivot', () => {
     expect(p.grandTotal).toBe(340); // 10+30+100+200
   });
 
+  it('buckets a numeric axis into nice ranges with drill-down bounds', () => {
+    const p = computePivot(ds, allRows(ds), {
+      rowKey: 'latency',
+      colKey: 'level',
+      aggregation: 'count',
+      measureKey: null,
+      rowBucket: true,
+    })!;
+    // latency values (both dims present): 5, 10, 30, 100, 200 → step 20 from 0.
+    expect(p.rowBounds).not.toBeNull();
+    expect(p.colBounds).toBeNull(); // the column axis is still categorical
+    expect(p.rowValues[0]).toBe('0–20');
+    expect(p.rowBounds![0]).toEqual([0, 20]);
+
+    const r = (label: string) => p.rowValues.indexOf(label);
+    const c = (label: string) => p.colValues.indexOf(label);
+    expect(p.cells[r('0–20')][c('INFO')]).toBe(1); // latency 10 / INFO
+    expect(p.cells[r('0–20')][c('WARN')]).toBe(1); // latency 5 / WARN
+    expect(p.cells[r('200–220')][c('ERROR')]).toBe(1); // latency 200 / ERROR
+    expect(p.grandTotal).toBe(5);
+  });
+
   it('averages only over rows with a usable measure', () => {
     const p = computePivot(ds, allRows(ds), {
       ...base,

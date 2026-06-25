@@ -52,7 +52,16 @@ export function PivotPanel({
   onAddFilter,
 }: PivotPanelProps) {
   const [expanded, setExpanded] = useState(false);
-  const { config, numericColumns, setRow, setCol, setAggregation, setMeasure } = pivot;
+  const {
+    config,
+    numericColumns,
+    setRow,
+    setCol,
+    setAggregation,
+    setMeasure,
+    setRowBucket,
+    setColBucket,
+  } = pivot;
 
   // Gate the cross-tab pass on the panel being open — collapsed costs nothing.
   const result = useMemo(
@@ -63,6 +72,8 @@ export function PivotPanel({
   const colType = (key: string | null) =>
     key != null ? dataset.columns[dataset.columnIndex[key]]?.type : undefined;
 
+  const rowIsNumeric = colType(config.rowKey) === 'number';
+  const colIsNumeric = colType(config.colKey) === 'number';
   const measureDisabled = config.aggregation === 'count';
   const noNumeric = numericColumns.length === 0;
   const measureCol =
@@ -75,14 +86,25 @@ export function PivotPanel({
         measureCol?.name ?? 'value'
       }`;
 
-  const handleCell = (rowVal: string, colVal: string) => {
+  const handleCell = (rowVal: string, colVal: string, ri: number, ci: number) => {
     const rt = colType(config.rowKey);
     const ct = colType(config.colKey);
     if (!onAddFilter || config.rowKey == null || config.colKey == null || !rt || !ct) {
       return;
     }
-    onAddFilter(categoricalFilter(config.rowKey, rt, rowVal));
-    onAddFilter(categoricalFilter(config.colKey, ct, colVal));
+    // A bucketed axis drills into its [lo, hi) range; otherwise an exact value.
+    const axisFilter = (
+      key: string,
+      type: typeof rt,
+      value: string,
+      bounds: [number, number] | undefined,
+    ): NewFilter =>
+      bounds
+        ? { columnKey: key, operator: 'between', value: String(bounds[0]), value2: String(bounds[1]) }
+        : categoricalFilter(key, type, value);
+
+    onAddFilter(axisFilter(config.rowKey, rt, rowVal, result?.rowBounds?.[ri]));
+    onAddFilter(axisFilter(config.colKey, ct, colVal, result?.colBounds?.[ci]));
   };
 
   const capped = result != null && (result.rowHasOthers || result.colHasOthers);
@@ -130,6 +152,18 @@ export function PivotPanel({
                 </option>
               ))}
             </select>
+            {rowIsNumeric && (
+              <label className="flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+                <input
+                  type="checkbox"
+                  aria-label="Bucket rows"
+                  checked={config.rowBucket === true}
+                  onChange={(e) => setRowBucket(e.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500/30 dark:border-slate-600 dark:bg-slate-700"
+                />
+                Bucket
+              </label>
+            )}
 
             <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
               Columns
@@ -146,6 +180,18 @@ export function PivotPanel({
                 </option>
               ))}
             </select>
+            {colIsNumeric && (
+              <label className="flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+                <input
+                  type="checkbox"
+                  aria-label="Bucket columns"
+                  checked={config.colBucket === true}
+                  onChange={(e) => setColBucket(e.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500/30 dark:border-slate-600 dark:bg-slate-700"
+                />
+                Bucket
+              </label>
+            )}
 
             <span className="mx-1 h-5 w-px bg-slate-200 dark:bg-slate-700" />
 
@@ -219,7 +265,7 @@ export function PivotPanel({
                                 {clickable ? (
                                   <button
                                     type="button"
-                                    onClick={() => handleCell(rv, cv)}
+                                    onClick={() => handleCell(rv, cv, ri, ci)}
                                     aria-label={`Filter ${rv} × ${cv}`}
                                     className="block w-full px-3 py-1.5 text-right hover:ring-2 hover:ring-inset hover:ring-brand-500"
                                   >

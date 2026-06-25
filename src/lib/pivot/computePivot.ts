@@ -1,9 +1,22 @@
 import type { CellValue, Dataset } from '@/types/dataset';
 import type { PivotConfig, PivotResult } from '@/types/pivot';
 import { OTHERS_BUCKET } from '@/types/pivot';
+import { makeBucketer } from './numericBuckets';
 
 /** Max distinct values shown per axis before the rest collapse into `(others)`. */
 const AXIS_CAP = 20;
+
+interface Axis {
+  values: string[];
+  /** Maps a cell to its axis position, or undefined to skip the row. */
+  indexOf: (cell: CellValue) => number | undefined;
+  hasOthers: boolean;
+  /** Per-value numeric bounds when bucketed, else null. */
+  bounds: [number, number][] | null;
+}
+
+const toNum = (c: CellValue): number =>
+  typeof c === 'number' ? c : Number(c);
 
 interface Acc {
   sum: number;
@@ -29,16 +42,11 @@ function reduce(acc: Acc, aggregation: PivotConfig['aggregation']): number {
 const isBlank = (c: CellValue): boolean => c == null || c === '';
 
 /**
- * Picks the most frequent values for an axis, capped at AXIS_CAP. When the
- * distinct count exceeds the cap, the top `CAP-1` are kept and the remainder
- * collapse into a trailing `(others)` bucket. Returns the ordered header values,
- * a value→index map (overflow values resolve to the others index), and a flag.
+ * Picks the most frequent values for a categorical axis, capped at AXIS_CAP.
+ * When the distinct count exceeds the cap, the top `CAP-1` are kept and the
+ * remainder collapse into a trailing `(others)` bucket.
  */
-function buildAxis(freq: Map<string, number>): {
-  values: string[];
-  lookup: (v: string) => number | undefined;
-  hasOthers: boolean;
-} {
+function categoricalAxis(freq: Map<string, number>): Axis {
   const sorted = [...freq.entries()].sort(
     (a, b) => b[1] - a[1] || a[0].localeCompare(b[0], undefined, { numeric: true }),
   );
@@ -50,11 +58,35 @@ function buildAxis(freq: Map<string, number>): {
   if (hasOthers) values.push(OTHERS_BUCKET);
   const othersIdx = values.length - 1;
 
-  // Any value beyond the cap (absent from `index`) resolves to the others bucket.
-  const lookup = (v: string): number | undefined =>
-    index.get(v) ?? (hasOthers ? othersIdx : undefined);
+  return {
+    values,
+    // Any value beyond the cap (absent from `index`) resolves to the others bucket.
+    indexOf: (cell) =>
+      index.get(String(cell)) ?? (hasOthers ? othersIdx : undefined),
+    hasOthers,
+    bounds: null,
+  };
+}
 
-  return { values, lookup, hasOthers };
+const EMPTY_AXIS: Axis = {
+  values: [],
+  indexOf: () => undefined,
+  hasOthers: false,
+  bounds: null,
+};
+
+/** Buckets a numeric axis into evenly-spaced "nice" ranges spanning [min, max]. */
+function bucketedAxis(min: number, max: number): Axis {
+  const b = makeBucketer(min, max);
+  return {
+    values: Array.from({ length: b.count }, (_, i) => b.labelOf(i)),
+    indexOf: (cell) => {
+      const n = toNum(cell);
+      return Number.isFinite(n) ? b.indexOf(n) : undefined;
+    },
+    hasOthers: false,
+    bounds: Array.from({ length: b.count }, (_, i) => b.boundsOf(i)),
+  };
 }
 
 /**
@@ -78,23 +110,53 @@ export function computePivot(
   const measIdx = measureKey != null ? dataset.columnIndex[measureKey] : undefined;
 
   const { rows } = dataset;
+  const rowBucket = config.rowBucket === true && dataset.columns[rowIdx].type === 'number';
+  const colBucket = config.colBucket === true && dataset.columns[colIdx].type === 'number';
 
-  // Phase 1 — axis frequencies over rows where BOTH dimensions are present.
+  // Phase 1 — over rows where BOTH dimensions are present, gather either the
+  // value frequencies (categorical axis) or the numeric range (bucketed axis).
   const freqRow = new Map<string, number>();
   const freqCol = new Map<string, number>();
+  const rng = { rowMin: Infinity, rowMax: -Infinity, colMin: Infinity, colMax: -Infinity };
   for (const r of order) {
     const row = rows[r];
     const rv = row[rowIdx];
     const cv = row[colIdx];
     if (isBlank(rv) || isBlank(cv)) continue;
-    const rs = String(rv);
-    const cs = String(cv);
-    freqRow.set(rs, (freqRow.get(rs) ?? 0) + 1);
-    freqCol.set(cs, (freqCol.get(cs) ?? 0) + 1);
+
+    if (rowBucket) {
+      const n = toNum(rv);
+      if (Number.isFinite(n)) {
+        if (n < rng.rowMin) rng.rowMin = n;
+        if (n > rng.rowMax) rng.rowMax = n;
+      }
+    } else {
+      const rs = String(rv);
+      freqRow.set(rs, (freqRow.get(rs) ?? 0) + 1);
+    }
+
+    if (colBucket) {
+      const n = toNum(cv);
+      if (Number.isFinite(n)) {
+        if (n < rng.colMin) rng.colMin = n;
+        if (n > rng.colMax) rng.colMax = n;
+      }
+    } else {
+      const cs = String(cv);
+      freqCol.set(cs, (freqCol.get(cs) ?? 0) + 1);
+    }
   }
 
-  const rowAxis = buildAxis(freqRow);
-  const colAxis = buildAxis(freqCol);
+  const rowAxis = rowBucket
+    ? rng.rowMax >= rng.rowMin
+      ? bucketedAxis(rng.rowMin, rng.rowMax)
+      : EMPTY_AXIS
+    : categoricalAxis(freqRow);
+  const colAxis = colBucket
+    ? rng.colMax >= rng.colMin
+      ? bucketedAxis(rng.colMin, rng.colMax)
+      : EMPTY_AXIS
+    : categoricalAxis(freqCol);
   const nRows = rowAxis.values.length;
   const nCols = colAxis.values.length;
 
@@ -111,8 +173,8 @@ export function computePivot(
     const rv = row[rowIdx];
     const cv = row[colIdx];
     if (isBlank(rv) || isBlank(cv)) continue;
-    const ri = rowAxis.lookup(String(rv));
-    const ci = colAxis.lookup(String(cv));
+    const ri = rowAxis.indexOf(rv);
+    const ci = colAxis.indexOf(cv);
     if (ri === undefined || ci === undefined) continue;
 
     let n = 0;
@@ -150,5 +212,7 @@ export function computePivot(
     colTotals: colAcc.map((acc) => reduce(acc, aggregation)),
     grandTotal: reduce(grandAcc, aggregation),
     max,
+    rowBounds: rowAxis.bounds,
+    colBounds: colAxis.bounds,
   };
 }

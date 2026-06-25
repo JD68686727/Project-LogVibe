@@ -19,6 +19,22 @@ test('pivot: cross-tab two columns and drill into a cell', async ({ page }) => {
   await expect(page.getByText('6 of 15 rows')).toBeVisible();
 });
 
+test('pivot: bucket a numeric axis into ranges', async ({ page }) => {
+  await page.goto('/');
+  await page.setInputFiles('input[type="file"]', CSV1);
+  await expect(page.getByText('15 of 15 rows')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Pivot table' }).click();
+  await page.getByLabel('Pivot rows').selectOption('latency_ms');
+  await page.getByLabel('Pivot columns').selectOption('level');
+
+  // Toggle bucketing on the numeric latency axis → ranges instead of values.
+  await page.getByLabel('Bucket rows').check();
+  await expect(page.getByTestId('pivot-table')).toBeVisible();
+  // latency 3..2400 → nice width 200 → the first bucket header is "0–200".
+  await expect(page.getByRole('rowheader', { name: '0–200', exact: true })).toBeVisible();
+});
+
 test('pivot: a shared link restores the pivot config', async ({ page, context }) => {
   await page.goto('/');
   await page.setInputFiles('input[type="file"]', CSV1);
