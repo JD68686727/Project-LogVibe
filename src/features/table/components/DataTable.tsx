@@ -18,6 +18,10 @@ export interface DataTableProps {
   /** Active sort keys, primary first. */
   sortKeys: SortKey[];
   onToggleSort: (columnKey: string, additive: boolean) => void;
+  /** Click a row to open its detail view. */
+  onSelectRow?: (rowIdx: number) => void;
+  /** Dataset row index currently open in the detail view, for highlighting. */
+  selectedRowIdx?: number | null;
 }
 
 function SortIcon({
@@ -52,6 +56,8 @@ export function DataTable({
   order,
   sortKeys,
   onToggleSort,
+  onSelectRow,
+  selectedRowIdx,
 }: DataTableProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -110,10 +116,30 @@ export function DataTable({
           {virtualizer.getVirtualItems().map((vRow) => {
             const rowIdx = order[vRow.index];
             const row = dataset.rows[rowIdx];
+            const selected = selectedRowIdx === rowIdx;
             return (
               <div
                 key={vRow.key}
-                className="absolute left-0 top-0 grid border-b border-slate-100 text-sm hover:bg-brand-50/50 dark:border-slate-800 dark:hover:bg-slate-800/50"
+                onClick={onSelectRow ? () => onSelectRow(rowIdx) : undefined}
+                role={onSelectRow ? 'button' : undefined}
+                tabIndex={onSelectRow ? 0 : undefined}
+                onKeyDown={
+                  onSelectRow
+                    ? (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          onSelectRow(rowIdx);
+                        }
+                      }
+                    : undefined
+                }
+                className={cn(
+                  'absolute left-0 top-0 grid border-b border-slate-100 text-sm dark:border-slate-800',
+                  onSelectRow && 'cursor-pointer',
+                  selected
+                    ? 'bg-brand-50 ring-1 ring-inset ring-brand-300 dark:bg-brand-500/10 dark:ring-brand-500/40'
+                    : 'hover:bg-brand-50/50 dark:hover:bg-slate-800/50',
+                )}
                 style={{
                   gridTemplateColumns: gridTemplate,
                   height: ROW_HEIGHT,

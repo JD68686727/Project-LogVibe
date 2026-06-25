@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import type { Dataset } from '@/types/dataset';
 import type { SavedView } from '@/types/view';
 import type { ViewState } from '@/types/share';
@@ -7,6 +7,7 @@ import { FilterBar } from '@/features/filtering/components/FilterBar';
 import { normalizeFilterGroups } from '@/lib/filter/normalizeGroups';
 import { useSortedRows } from '@/features/table/hooks/useSortedRows';
 import { DataTable } from '@/features/table/components/DataTable';
+import { RowDetail } from '@/features/table/components/RowDetail';
 import { useColumnView } from '@/features/table/hooks/useColumnView';
 import { ColumnManager } from '@/features/table/components/ColumnManager';
 import { ExportMenu } from '@/features/export/components/ExportMenu';
@@ -53,6 +54,7 @@ export function DataWorkspace({
   const columnView = useColumnView(dataset);
   const pivot = usePivotConfig(dataset);
   const presets = usePresets(dataset);
+  const [selectedRowIdx, setSelectedRowIdx] = useState<number | null>(null);
   const { order, sortKeys, toggleSort, setSort } = useSortedRows(
     dataset,
     filtersApi.filteredOrder,
@@ -167,7 +169,20 @@ export function DataWorkspace({
         order={order}
         sortKeys={sortKeys}
         onToggleSort={toggleSort}
+        onSelectRow={setSelectedRowIdx}
+        selectedRowIdx={selectedRowIdx}
       />
+
+      {selectedRowIdx !== null && (
+        <RowDetail
+          dataset={dataset}
+          order={order}
+          rowIdx={selectedRowIdx}
+          onNavigate={setSelectedRowIdx}
+          onClose={() => setSelectedRowIdx(null)}
+          onAddFilter={filtersApi.addColumnFilter}
+        />
+      )}
 
       <ErrorBoundary
         fallback={(_error, reset) => (
