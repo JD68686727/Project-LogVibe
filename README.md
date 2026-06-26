@@ -4,7 +4,7 @@
 sort, profile, chart, and compare it — entirely in your browser. Your data never
 leaves the machine.
 
-**🔗 Live demo:** https://jd68686727.github.io/Project-CSV/ — load a CSV; nothing is uploaded.
+**🔗 Live demo:** https://jd68686727.github.io/Project-LogVibe/ — load a CSV; nothing is uploaded.
 
 LogVibe is built for IT administrators, data analysts, and developers who need a
 fast, GDPR-friendly way to explore large logs and CSVs without uploading them to
