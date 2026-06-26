@@ -1,6 +1,11 @@
 import type { CellValue, Dataset } from '@/types/dataset';
 import type { SortKey } from '@/types/table';
 
+// One reused collator. `String.prototype.localeCompare(…, opts)` reconfigures a
+// collator on every call — pathologically slow when sorting tens of thousands of
+// rows; a shared Intl.Collator is orders of magnitude faster.
+const collator = new Intl.Collator(undefined, { numeric: true });
+
 /** Comparator for two non-null cells of the same logical column. */
 function compareNonNull(a: CellValue, b: CellValue): number {
   if (typeof a === 'number' && typeof b === 'number') return a - b;
@@ -9,7 +14,7 @@ function compareNonNull(a: CellValue, b: CellValue): number {
   }
   // Strings & dates: ISO dates sort correctly lexically; `numeric` handles
   // embedded numbers in strings (e.g. "item2" < "item10").
-  return String(a).localeCompare(String(b), undefined, { numeric: true });
+  return collator.compare(String(a), String(b));
 }
 
 /**
