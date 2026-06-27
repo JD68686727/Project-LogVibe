@@ -4,6 +4,7 @@ import type { WorkspaceMode } from '@/types/workspace';
 import { useLogParser } from '@/features/ingestion/hooks/useLogParser';
 import { DropZone } from '@/features/ingestion/components/DropZone';
 import { ParseStatus } from '@/features/ingestion/components/ParseStatus';
+import { LogPatternBuilder } from '@/features/ingestion/components/LogPatternBuilder';
 import { useWorkspace } from '@/features/workspace/hooks/useWorkspace';
 import { WorkspaceBar } from '@/features/workspace/components/WorkspaceBar';
 import { useSharedView } from '@/features/sharing/hooks/useSharedView';
@@ -25,8 +26,17 @@ export function App() {
   const shared = useSharedView();
   const { theme, setTheme } = useTheme();
   const [mode, setMode] = useState<WorkspaceMode>('analyze');
+  const [showBuilder, setShowBuilder] = useState(false);
   const lastAddedRef = useRef<Dataset | null>(null);
   const { addDataset } = ws;
+
+  // A dataset built by the custom-log regex parser bypasses the CSV parser and
+  // is added to the workspace directly.
+  const handleCustomDataset = (ds: Dataset) => {
+    addDataset(ds);
+    setMode('analyze');
+    setShowBuilder(false);
+  };
 
   // When a parse completes, move the dataset into the workspace and clear the
   // parser so it's ready for the next file. The ref guards against re-adding.
@@ -75,6 +85,16 @@ export function App() {
               errors={errors}
               onClear={reset}
             />
+            <p className="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">
+              Unstructured log (Nginx, Apache, syslog…)?{' '}
+              <button
+                type="button"
+                onClick={() => setShowBuilder(true)}
+                className="font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+              >
+                Build a custom log format
+              </button>
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -88,6 +108,7 @@ export function App() {
               onSetActive={ws.setActive}
               onRemove={ws.removeFile}
               onAddFile={parseFile}
+              onCustomLog={() => setShowBuilder(true)}
             />
 
             {status === 'error' && (
@@ -140,6 +161,13 @@ export function App() {
           </div>
         )}
       </main>
+
+      {showBuilder && (
+        <LogPatternBuilder
+          onDataset={handleCustomDataset}
+          onClose={() => setShowBuilder(false)}
+        />
+      )}
     </div>
   );
 }

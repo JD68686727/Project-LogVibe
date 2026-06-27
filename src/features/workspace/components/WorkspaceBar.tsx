@@ -13,6 +13,8 @@ export interface WorkspaceBarProps {
   onSetActive: (id: string) => void;
   onRemove: (id: string) => void;
   onAddFile: (file: File) => void;
+  /** Opens the custom-log pattern builder. */
+  onCustomLog?: () => void;
 }
 
 const MODES: { value: WorkspaceMode; label: string }[] = [
@@ -30,6 +32,7 @@ export function WorkspaceBar({
   onSetActive,
   onRemove,
   onAddFile,
+  onCustomLog,
 }: WorkspaceBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -106,6 +109,16 @@ export function WorkspaceBar({
           className="hidden"
           onChange={(e) => handlePick(e.target.files)}
         />
+
+        {onCustomLog && (
+          <button
+            type="button"
+            onClick={onCustomLog}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-500 hover:border-brand-400 hover:text-brand-600 dark:border-slate-600 dark:text-slate-400 dark:hover:text-brand-400"
+          >
+            + Custom log
+          </button>
+        )}
       </div>
 
       {/* Mode toggle */}
