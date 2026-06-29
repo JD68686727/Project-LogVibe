@@ -4,6 +4,7 @@ import type { Dataset } from '@/types/dataset';
 import type { SavedLogPattern } from '@/types/logPattern';
 import { cn } from '@/utils/cn';
 import { btnSecondary, inputCls } from '@/utils/controls';
+import { seriesColor } from '@/utils/chartColors';
 import { assembleDataset } from '@/lib/csv/assembleDataset';
 import {
   decodeBytes,
@@ -79,7 +80,7 @@ export function LogPatternBuilder({ onDataset, onClose }: LogPatternBuilderProps
   const [busy, setBusy] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
 
-  const patternRef = useRef<HTMLInputElement>(null);
+  const patternRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const presets = useLogPatterns();
 
@@ -250,27 +251,21 @@ export function LogPatternBuilder({ onDataset, onClose }: LogPatternBuilderProps
 
           {/* Pattern */}
           <section className="space-y-1.5">
-            <p className={section}>Pattern (named groups → columns)</p>
-            <div className="flex gap-2">
-              <input
-                ref={patternRef}
-                aria-label="Log pattern regex"
-                value={regex}
-                onChange={(e) => setRegex(e.target.value)}
-                spellCheck={false}
-                className={cn(inputCls, 'flex-1 font-mono text-xs')}
-              />
-              <input
-                aria-label="Regex flags"
-                value={flags}
-                onChange={(e) => setFlags(e.target.value)}
-                placeholder="flags"
-                spellCheck={false}
-                className={cn(inputCls, 'w-16 font-mono text-xs')}
-              />
-            </div>
+            <p className={section}>Pattern</p>
+            <textarea
+              ref={patternRef}
+              aria-label="Log pattern regex"
+              value={regex}
+              onChange={(e) => setRegex(e.target.value)}
+              spellCheck={false}
+              rows={2}
+              className={cn(
+                inputCls,
+                'w-full resize-y whitespace-pre-wrap break-all font-mono text-xs leading-relaxed',
+              )}
+            />
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-xs text-slate-400 dark:text-slate-500">Insert:</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">Add field:</span>
               {CHIPS.map((c) => (
                 <button
                   key={c.label}
@@ -282,8 +277,36 @@ export function LogPatternBuilder({ onDataset, onClose }: LogPatternBuilderProps
                   + {c.label}
                 </button>
               ))}
+              <span className="ml-auto flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
+                flags
+                <input
+                  aria-label="Regex flags"
+                  value={flags}
+                  onChange={(e) => setFlags(e.target.value)}
+                  spellCheck={false}
+                  className={cn(inputCls, 'w-14 font-mono text-xs')}
+                />
+              </span>
             </div>
-            {!compiled.ok && (
+            {compiled.ok ? (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-xs text-slate-400 dark:text-slate-500">
+                  Columns:
+                </span>
+                {compiled.fields.map((f, i) => (
+                  <span
+                    key={f}
+                    className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                  >
+                    <span
+                      className="h-2 w-2 rounded-full"
+                      style={{ backgroundColor: seriesColor(i) }}
+                    />
+                    {f}
+                  </span>
+                ))}
+              </div>
+            ) : (
               <p className="text-xs font-medium text-rose-600 dark:text-rose-400">
                 {compiled.error}
               </p>
@@ -305,9 +328,15 @@ export function LogPatternBuilder({ onDataset, onClose }: LogPatternBuilderProps
                 <table className="w-full text-xs" data-testid="log-preview">
                   <thead className="bg-slate-50 text-left font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                     <tr>
-                      {headers.map((h) => (
+                      {headers.map((h, i) => (
                         <th key={h} className="whitespace-nowrap px-2 py-1.5">
-                          {h}
+                          <span className="inline-flex items-center gap-1">
+                            <span
+                              className="h-2 w-2 rounded-full"
+                              style={{ backgroundColor: seriesColor(i) }}
+                            />
+                            {h}
+                          </span>
                         </th>
                       ))}
                     </tr>
