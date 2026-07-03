@@ -156,19 +156,73 @@ export const CISCO_RULES: ConfigRule[] = [
   },
 ];
 
+/** Apache httpd hardening checks. */
+export const APACHE_RULES: ConfigRule[] = [
+  {
+    id: 'apache-server-tokens',
+    key: 'ServerTokens',
+    severity: 'low',
+    title: 'Server version disclosed',
+    remediation: 'Set ServerTokens Prod.',
+    safeValues: ['prod', 'productonly'],
+  },
+  {
+    id: 'apache-server-signature',
+    key: 'ServerSignature',
+    severity: 'low',
+    title: 'Server signature footer enabled',
+    remediation: 'Set ServerSignature Off.',
+    unsafeValues: ['on'],
+  },
+  {
+    id: 'apache-trace-enable',
+    key: 'TraceEnable',
+    severity: 'medium',
+    title: 'HTTP TRACE enabled (Cross-Site Tracing)',
+    remediation: 'Set TraceEnable Off.',
+    unsafeValues: ['on'],
+  },
+  {
+    id: 'apache-weak-tls',
+    key: 'SSLProtocol',
+    severity: 'high',
+    title: 'Weak TLS protocol enabled',
+    remediation: 'Restrict to TLSv1.2/1.3, e.g. SSLProtocol all -SSLv3 -TLSv1 -TLSv1.1.',
+    unsafeValues: ['all', 'sslv2', 'sslv3', 'tlsv1', '+all'],
+  },
+  {
+    id: 'apache-directory-listing',
+    subject: 'Options',
+    severity: 'medium',
+    title: 'Directory listing enabled (Options Indexes)',
+    remediation: 'Remove Indexes from Options (or set Options -Indexes).',
+    // Matches `Indexes` / `+Indexes` but not the hardened `-Indexes`.
+    unsafeLine: /^\s*Options\b[^\n]*(?<!-)\bIndexes\b/im,
+  },
+  {
+    id: 'apache-hsts-missing',
+    subject: 'HSTS header',
+    severity: 'low',
+    title: 'HSTS header not set',
+    remediation: 'Header always set Strict-Transport-Security "max-age=63072000".',
+    requireLine: /Strict-Transport-Security/i,
+  },
+];
+
 /**
  * Built-in rulesets per dialect. INI/generic ship empty for now — the point is
  * the shape: adding a ruleset is pure data, no engine changes.
  */
 export const RULES_BY_SYNTAX: Record<ConfigSyntax, ConfigRule[]> = {
   ssh: SSH_RULES,
+  apache: APACHE_RULES,
   nginx: NGINX_RULES,
   cisco: CISCO_RULES,
   ini: [],
   generic: [],
 };
 
-const ALL_RULES = [...SSH_RULES, ...NGINX_RULES, ...CISCO_RULES];
+const ALL_RULES = [...SSH_RULES, ...APACHE_RULES, ...NGINX_RULES, ...CISCO_RULES];
 
 /** Human-readable title for a rule id (across all dialects), for reports. */
 export function ruleTitle(id: string): string | undefined {

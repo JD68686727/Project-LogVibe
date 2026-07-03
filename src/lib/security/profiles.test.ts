@@ -4,6 +4,7 @@ import { bruteForce } from './detectors/bruteForce';
 import { httpErrorBurst } from './detectors/httpErrorBurst';
 import { endpointEnum } from './detectors/endpointEnum';
 import { offHours } from './detectors/offHours';
+import { payloadSignatures } from './detectors/payloadSignatures';
 import { runProfiles } from './profiles';
 
 /** 6 failed logins from .66 inside 60s, plus noise from other IPs. */
@@ -132,6 +133,37 @@ describe('offHours', () => {
     expect(findings[0].entity).toBe('10.0.0.99');
     expect(findings[0].count).toBe(3);
     expect(findings[0].technique).toBe('T1078 · Valid Accounts');
+  });
+});
+
+describe('payloadSignatures', () => {
+  it('flags SQLi, XSS and traversal payloads per source', () => {
+    const ds = makeDataset(
+      [
+        { name: 'url', type: 'string' },
+        { name: 'client_ip', type: 'string' },
+      ],
+      [
+        ["/search?q=' OR 1=1 --", '203.0.113.9'],
+        ['/products?id=1 UNION SELECT x FROM users', '203.0.113.9'],
+        ['/p?next=<script>alert(1)</script>', '203.0.113.9'],
+        ['/d?file=../../../../etc/passwd', '203.0.113.9'],
+        ['/home', '10.0.0.7'],
+      ],
+    );
+    const findings = payloadSignatures(ds, allRows(ds));
+    // sqli (2 rows), xss (1), traversal (1) → 3 findings, all for the attacker.
+    expect(findings).toHaveLength(3);
+    expect(findings.every((f) => f.entity === '203.0.113.9')).toBe(true);
+    expect(
+      findings.every((f) => f.technique === 'T1190 · Exploit Public-Facing Application'),
+    ).toBe(true);
+    expect(findings.find((f) => f.detail.includes('SQL injection'))?.count).toBe(2);
+  });
+
+  it('no-ops when there is no request/url column', () => {
+    const ds = makeDataset([{ name: 'level', type: 'string' }], [['INFO'], ['ERROR']]);
+    expect(payloadSignatures(ds, allRows(ds))).toEqual([]);
   });
 });
 
