@@ -1,3 +1,4 @@
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import { test, expect } from '@playwright/test';
 
@@ -41,4 +42,41 @@ test('security scan: web probing triggers path-enumeration and off-hours', async
   await expect(modal.getByText('path-enumeration')).toBeVisible();
   await expect(modal.getByText('off-hours-activity')).toBeVisible();
   await expect(modal.getByText('45.9.1.7').first()).toBeVisible();
+});
+
+test('security scan: download a Markdown report, plain and redacted', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.setInputFiles('input[type="file"]', WEBATTACK);
+  await expect(page.getByText('9 of 9 rows')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Security scan' }).click();
+  const modal = page.getByTestId('security-scan');
+  await expect(modal.getByText('path-enumeration')).toBeVisible();
+
+  // Plain report keeps the real address.
+  const [dl] = await Promise.all([
+    page.waitForEvent('download'),
+    modal.getByRole('button', { name: 'Download report' }).click(),
+  ]);
+  expect(dl.suggestedFilename()).toBe('web-attack.security-report.md');
+  const plain = path.join(test.info().outputDir, 'report.md');
+  await dl.saveAs(plain);
+  const text = await fs.readFile(plain, 'utf-8');
+  expect(text).toContain('# Security Report — web-attack.csv');
+  expect(text).toContain('T1595');
+  expect(text).toContain('45.9.1.7');
+
+  // Redacted report anonymizes the address.
+  await modal.getByLabel('Redact addresses').check();
+  const [dl2] = await Promise.all([
+    page.waitForEvent('download'),
+    modal.getByRole('button', { name: 'Download report' }).click(),
+  ]);
+  const red = path.join(test.info().outputDir, 'report-redacted.md');
+  await dl2.saveAs(red);
+  const rtext = await fs.readFile(red, 'utf-8');
+  expect(rtext).toContain('[IP_');
+  expect(rtext).not.toContain('45.9.1.7');
 });

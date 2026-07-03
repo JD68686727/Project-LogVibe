@@ -1,10 +1,16 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { Dataset } from '@/types/dataset';
 import { findingsToDataset } from '@/lib/analysis/findings';
+import { findingsToMarkdown } from '@/lib/analysis/report';
 import { runProfiles, SECURITY_PROFILES } from '@/lib/security/profiles';
+import { makeCellRedactor } from '@/lib/export/redact';
+import { downloadBlob } from '@/utils/downloadBlob';
 import { btnSecondary } from '@/utils/controls';
 import { ModalShell } from '@/features/analysis/components/ModalShell';
 import { FindingsTable } from '@/features/analysis/components/FindingsTable';
+
+const checkbox =
+  'h-3.5 w-3.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500/30 dark:border-slate-600 dark:bg-slate-700';
 
 export interface SecurityScanModalProps {
   dataset: Dataset;
@@ -29,12 +35,32 @@ export function SecurityScanModal({
   onClose,
 }: SecurityScanModalProps) {
   const findings = useMemo(() => runProfiles(dataset, order), [dataset, order]);
+  const [redactReport, setRedactReport] = useState(false);
 
   const openAsDataset = () => {
     onOpenDataset(
       findingsToDataset(findings, `${baseName(dataset.meta.fileName)}.threats.csv`),
     );
     onClose();
+  };
+
+  const downloadReport = () => {
+    const redactor = redactReport
+      ? makeCellRedactor(['email', 'mac', 'ipv6', 'ipv4'], 'consistent')
+      : null;
+    const md = findingsToMarkdown(
+      findings,
+      { source: dataset.meta.fileName },
+      {
+        labelFor: (id) => SECURITY_PROFILES.find((p) => p.id === id)?.label ?? id,
+        redact: redactor ? (t) => String(redactor(t)) : undefined,
+      },
+    );
+    downloadBlob(
+      `${baseName(dataset.meta.fileName)}.security-report.md`,
+      md,
+      'text/markdown',
+    );
   };
 
   return (
@@ -45,14 +71,35 @@ export function SecurityScanModal({
       onClose={onClose}
       footer={
         <>
-          <p className="text-xs text-slate-400 dark:text-slate-500">
-            {findings.length > 0
-              ? `${findings.length} finding${findings.length === 1 ? '' : 's'} across ${order.length.toLocaleString()} rows`
-              : 'No threats detected by the active profiles.'}
-          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-xs text-slate-400 dark:text-slate-500">
+              {findings.length > 0
+                ? `${findings.length} finding${findings.length === 1 ? '' : 's'} across ${order.length.toLocaleString()} rows`
+                : 'No threats detected by the active profiles.'}
+            </p>
+            {findings.length > 0 && (
+              <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                <input
+                  type="checkbox"
+                  checked={redactReport}
+                  onChange={(e) => setRedactReport(e.target.checked)}
+                  className={checkbox}
+                />
+                Redact addresses
+              </label>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <button type="button" onClick={onClose} className={btnSecondary}>
               Close
+            </button>
+            <button
+              type="button"
+              disabled={findings.length === 0}
+              onClick={downloadReport}
+              className={`${btnSecondary} disabled:cursor-not-allowed disabled:opacity-40`}
+            >
+              Download report
             </button>
             <button
               type="button"
