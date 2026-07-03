@@ -1,13 +1,12 @@
 import type { Dataset } from '@/types/dataset';
 import type { Finding } from '@/lib/analysis/findings';
-import { cellText, guessColumn, IP_NEEDLES } from '../util';
+import { cellText, guessColumn, IP_NEEDLES, STATUS_NEEDLES } from '../util';
 
 export interface HttpErrorBurstOptions {
   /** Minimum 4xx/5xx responses from one source to flag it. */
   threshold?: number;
 }
 
-const STATUS_NEEDLES = ['status', 'code', 'response'] as const;
 const HTTP_ERROR = /^[45]\d\d$/;
 
 /**
@@ -44,6 +43,7 @@ export function httpErrorBurst(
         entity: ip,
         detail: `${n} HTTP 4xx/5xx responses`,
         count: n,
+        technique: 'T1595 · Active Scanning',
       });
     }
   }

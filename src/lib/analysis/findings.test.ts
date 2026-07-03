@@ -42,4 +42,19 @@ describe('findingsToDataset', () => {
     expect(ds.rows).toHaveLength(0);
     expect(ds.columns).toHaveLength(5);
   });
+
+  it('adds a technique column only when a finding carries one', () => {
+    const withTech = findingsToDataset(
+      [{ ...F('high', 'a'), technique: 'T1110 · Brute Force' }],
+      'scan.csv',
+    );
+    expect(withTech.columns.map((c) => c.key)).toContain('technique');
+    expect(withTech.rows[0][withTech.columnIndex.technique]).toBe(
+      'T1110 · Brute Force',
+    );
+
+    // Findings without a technique keep the tidy 5-column schema.
+    const noTech = findingsToDataset([F('high', 'a')], 'scan.csv');
+    expect(noTech.columns.map((c) => c.key)).not.toContain('technique');
+  });
 });

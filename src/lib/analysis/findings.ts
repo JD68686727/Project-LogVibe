@@ -19,6 +19,8 @@ export interface Finding {
   detail: string;
   /** How many events/occurrences back this finding (1 for single facts). */
   count: number;
+  /** Optional MITRE ATT&CK reference, e.g. "T1110 · Brute Force". */
+  technique?: string;
 }
 
 export const SEVERITY_RANK: Record<Severity, number> = {
@@ -44,14 +46,18 @@ export function sortFindings(findings: Finding[]): Finding[] {
  * free. This is the key reuse trick that keeps the security modules thin.
  */
 export function findingsToDataset(findings: Finding[], fileName: string): Dataset {
-  const headers = ['severity', 'rule', 'entity', 'detail', 'count'];
-  const rows = sortFindings(findings).map((f) => [
-    f.severity,
-    f.rule,
-    f.entity,
-    f.detail,
-    String(f.count),
-  ]);
+  // Only threat-scan findings carry a technique — omit the column for audits
+  // (and anything else) that never set one, keeping the schema tidy.
+  const withTechnique = findings.some((f) => f.technique);
+  const headers = withTechnique
+    ? ['severity', 'rule', 'technique', 'entity', 'detail', 'count']
+    : ['severity', 'rule', 'entity', 'detail', 'count'];
+  const rows = sortFindings(findings).map((f) => {
+    const base = [f.severity, f.rule];
+    if (withTechnique) base.push(f.technique ?? '');
+    base.push(f.entity, f.detail, String(f.count));
+    return base;
+  });
   return assembleDataset(headers, rows, {
     fileName,
     fileSize: 0,

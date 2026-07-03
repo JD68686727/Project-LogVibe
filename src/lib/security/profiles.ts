@@ -2,6 +2,8 @@ import type { Dataset } from '@/types/dataset';
 import type { Finding } from '@/lib/analysis/findings';
 import { bruteForce } from './detectors/bruteForce';
 import { httpErrorBurst } from './detectors/httpErrorBurst';
+import { endpointEnum } from './detectors/endpointEnum';
+import { offHours } from './detectors/offHours';
 
 /**
  * A one-click defensive analysis. Each profile runs a detector over the current
@@ -27,6 +29,18 @@ export const SECURITY_PROFILES: SecurityProfile[] = [
     label: 'HTTP error scanning',
     hint: '≥5 client/server errors from one source',
     detect: (d, o) => httpErrorBurst(d, o),
+  },
+  {
+    id: 'path-enumeration',
+    label: 'Path enumeration (forced browsing)',
+    hint: '≥6 distinct 4xx endpoints from one source',
+    detect: (d, o) => endpointEnum(d, o),
+  },
+  {
+    id: 'off-hours-activity',
+    label: 'Off-hours activity',
+    hint: '≥3 events outside 06:00–22:00 from one source',
+    detect: (d, o) => offHours(d, o),
   },
 ];
 
