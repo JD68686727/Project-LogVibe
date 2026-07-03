@@ -8,6 +8,7 @@ import type {
   DateBucket,
 } from '@/types/chart';
 import { aggregate } from '@/lib/chart/aggregate';
+import { DEFAULT_TZ } from '@/lib/time/timezone';
 
 function defaultConfig(dataset: Dataset): ChartConfig {
   return {
@@ -33,7 +34,11 @@ export interface UseChartConfig {
   applyConfig: (config: ChartConfig) => void;
 }
 
-export function useChartConfig(dataset: Dataset, order: number[]): UseChartConfig {
+export function useChartConfig(
+  dataset: Dataset,
+  order: number[],
+  tz: string = DEFAULT_TZ,
+): UseChartConfig {
   const numericColumns = useMemo(
     () => dataset.columns.filter((c) => c.type === 'number'),
     [dataset],
@@ -74,8 +79,8 @@ export function useChartConfig(dataset: Dataset, order: number[]): UseChartConfi
   const applyConfig = useCallback((next: ChartConfig) => setConfig(next), []);
 
   const result = useMemo(
-    () => aggregate(dataset, order, config),
-    [dataset, order, config],
+    () => aggregate(dataset, order, config, tz),
+    [dataset, order, config, tz],
   );
 
   return {

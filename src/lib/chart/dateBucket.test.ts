@@ -19,6 +19,14 @@ describe('bucketDate', () => {
     expect(bucketDate('not-a-date', 'day')).toBe('not-a-date');
   });
 
+  it('buckets in the chosen display timezone (deterministic)', () => {
+    // 23:30 UTC on Jun 19 → 01:30 Jun 20 in Berlin (CEST +2): crosses the day.
+    const z = '2026-06-19T23:30:00Z';
+    expect(bucketDate(z, 'hour', 'Europe/Berlin')).toBe('2026-06-20 01:00');
+    expect(bucketDate(z, 'day', 'Europe/Berlin')).toBe('2026-06-20');
+    expect(bucketDate(z, 'day', 'UTC')).toBe('2026-06-19');
+  });
+
   it('produces chronologically sortable labels', () => {
     const labels = ['2026-06-19T23:30', '2026-06-20T00:15', '2026-06-19T09:00'].map(
       (s) => bucketDate(s, 'hour'),

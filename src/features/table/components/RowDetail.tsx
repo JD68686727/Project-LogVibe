@@ -25,6 +25,8 @@ export interface RowDetailProps {
   onClose: () => void;
   /** When set, each field offers a "filter to this value" action. */
   onAddFilter?: (filter: NewFilter) => void;
+  /** Display timezone applied to date fields. */
+  timeZone?: string;
 }
 
 function filterFor(key: string, type: ColumnType, value: CellValue): NewFilter {
@@ -42,6 +44,7 @@ export function RowDetail({
   onNavigate,
   onClose,
   onAddFilter,
+  timeZone,
 }: RowDetailProps) {
   const pos = order.indexOf(rowIdx);
   const inView = pos !== -1;
@@ -127,7 +130,7 @@ export function RowDetail({
         <div className="flex-1 divide-y divide-slate-100 overflow-auto dark:divide-slate-800">
           {dataset.columns.map((col) => {
             const value = row[dataset.columnIndex[col.key]];
-            const fc = formatCell(value, col.type);
+            const fc = formatCell(value, col.type, timeZone);
             return (
               <div key={col.key} className="group px-4 py-2.5">
                 <div className="flex items-center gap-2">

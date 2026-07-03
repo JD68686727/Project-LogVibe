@@ -10,8 +10,8 @@ test('table: open a row detail, navigate, and filter from a field', async ({
   await page.setInputFiles('input[type="file"]', CSV1);
   await expect(page.getByText('15 of 15 rows')).toBeVisible();
 
-  // Click the first data row (by its unique timestamp) → detail drawer.
-  await page.getByText('2026-06-19T08:01:12').click();
+  // Click the first data row (by its unique timestamp, shown in UTC) → detail drawer.
+  await page.getByText('2026-06-19 08:01:12').click();
   const drawer = page.getByTestId('row-detail');
   await expect(drawer).toBeVisible();
   // Row 1: endpoint /api/users, client_ip 10.0.0.4.

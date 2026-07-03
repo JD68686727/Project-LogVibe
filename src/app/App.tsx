@@ -11,6 +11,8 @@ import { WorkspaceBar } from '@/features/workspace/components/WorkspaceBar';
 import { useSharedView } from '@/features/sharing/hooks/useSharedView';
 import { useTheme } from '@/features/theme/hooks/useTheme';
 import { ThemeToggle } from '@/features/theme/components/ThemeToggle';
+import { useTimezone } from '@/features/time/hooks/useTimezone';
+import { TimezoneSelect } from '@/features/time/components/TimezoneSelect';
 import { ChartSkeleton } from '@/components/ChartSkeleton';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { DataWorkspace } from './DataWorkspace';
@@ -26,6 +28,7 @@ export function App() {
   const ws = useWorkspace();
   const shared = useSharedView();
   const { theme, setTheme } = useTheme();
+  const { tz, setTimezone } = useTimezone();
   const [mode, setMode] = useState<WorkspaceMode>('analyze');
   const [showBuilder, setShowBuilder] = useState(false);
   const [showAudit, setShowAudit] = useState(false);
@@ -76,7 +79,8 @@ export function App() {
               Privacy-first, local CSV &amp; log analyzer
             </p>
           </div>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-3">
+            <TimezoneSelect tz={tz} onChange={setTimezone} />
             <ThemeToggle theme={theme} onChange={setTheme} />
           </div>
         </div>
@@ -152,6 +156,7 @@ export function App() {
                   ws.setColumnType(ws.activeFile!.id, columnKey, type)
                 }
                 onOpenDataset={openDerivedDataset}
+                timeZone={tz}
               />
             )}
 
