@@ -21,6 +21,7 @@ import { StatsPanel } from '@/features/stats/components/StatsPanel';
 import { PivotPanel } from '@/features/pivot/components/PivotPanel';
 import { usePivotConfig } from '@/features/pivot/hooks/usePivotConfig';
 import { useChartConfig } from '@/features/visualization/hooks/useChartConfig';
+import { DEFAULT_TZ } from '@/lib/time/timezone';
 import { usePresets } from '@/features/presets/hooks/usePresets';
 import { PresetBar } from '@/features/presets/components/PresetBar';
 import { ChartSkeleton } from '@/components/ChartSkeleton';
@@ -44,6 +45,8 @@ export interface DataWorkspaceProps {
   onRetypeColumn: (columnKey: string, type: ColumnType) => void;
   /** Opens a derived dataset (e.g. a security scan's findings) as a new file. */
   onOpenDataset?: (dataset: Dataset) => void;
+  /** Display timezone for date columns + chart buckets (default UTC). */
+  timeZone?: string;
 }
 
 /**
@@ -59,9 +62,10 @@ export function DataWorkspace({
   onConsumePending,
   onRetypeColumn,
   onOpenDataset,
+  timeZone = DEFAULT_TZ,
 }: DataWorkspaceProps) {
   const filtersApi = useFilters(dataset);
-  const chart = useChartConfig(dataset, filtersApi.filteredOrder);
+  const chart = useChartConfig(dataset, filtersApi.filteredOrder, timeZone);
   const columnView = useColumnView(dataset);
   const pivot = usePivotConfig(dataset);
   const presets = usePresets(dataset);
@@ -267,6 +271,7 @@ export function DataWorkspace({
         onToggleSort={toggleSort}
         onSelectRow={setSelectedRowIdx}
         selectedRowIdx={selectedRowIdx}
+        timeZone={timeZone}
       />
 
       {selectedRowIdx !== null && (
@@ -277,6 +282,7 @@ export function DataWorkspace({
           onNavigate={setSelectedRowIdx}
           onClose={() => setSelectedRowIdx(null)}
           onAddFilter={filtersApi.addColumnFilter}
+          timeZone={timeZone}
         />
       )}
 

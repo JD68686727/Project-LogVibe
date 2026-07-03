@@ -1,6 +1,7 @@
 import type { Dataset } from '@/types/dataset';
 import type { ChartConfig, ChartDatum, ChartResult, ChartType } from '@/types/chart';
 import { bucketDate } from './dateBucket';
+import { DEFAULT_TZ } from '@/lib/time/timezone';
 
 /** Max categories rendered per chart type before truncation. */
 const CAPS: Record<ChartType, number> = { bar: 40, line: 100, pie: 8 };
@@ -41,6 +42,7 @@ export function aggregateToMap(
   dataset: Dataset,
   order: number[],
   config: ChartConfig,
+  tz: string = DEFAULT_TZ,
 ): Map<string, number> {
   const dimIdx = dataset.columnIndex[config.dimensionKey];
   if (dimIdx == null) return new Map();
@@ -62,7 +64,7 @@ export function aggregateToMap(
       dimCell == null
         ? '(empty)'
         : useBucket
-          ? bucketDate(String(dimCell), bucket)
+          ? bucketDate(String(dimCell), bucket, tz)
           : String(dimCell);
 
     let g = groups.get(name);
@@ -97,8 +99,9 @@ export function aggregate(
   dataset: Dataset,
   order: number[],
   config: ChartConfig,
+  tz: string = DEFAULT_TZ,
 ): ChartResult {
-  const map = aggregateToMap(dataset, order, config);
+  const map = aggregateToMap(dataset, order, config, tz);
   const data: ChartDatum[] = [...map.entries()].map(([name, value]) => ({
     name,
     value,

@@ -22,6 +22,8 @@ export interface DataTableProps {
   onSelectRow?: (rowIdx: number) => void;
   /** Dataset row index currently open in the detail view, for highlighting. */
   selectedRowIdx?: number | null;
+  /** Display timezone applied to date columns. */
+  timeZone?: string;
 }
 
 function SortIcon({
@@ -58,6 +60,7 @@ export function DataTable({
   onToggleSort,
   onSelectRow,
   selectedRowIdx,
+  timeZone,
 }: DataTableProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -151,7 +154,11 @@ export function DataTable({
                   {rowIdx + 1}
                 </div>
                 {columns.map((col) => {
-                  const cell = formatCell(row[dataset.columnIndex[col.key]], col.type);
+                  const cell = formatCell(
+                    row[dataset.columnIndex[col.key]],
+                    col.type,
+                    timeZone,
+                  );
                   return (
                     <div
                       key={col.key}
