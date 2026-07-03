@@ -1,8 +1,11 @@
 import { useRef, useState } from 'react';
 import type { Dataset } from '@/types/dataset';
 import { findingsToDataset } from '@/lib/analysis/findings';
+import { findingsToMarkdown } from '@/lib/analysis/report';
 import { auditConfigText, type ConfigAuditResult } from '@/lib/config/audit';
+import { ruleTitle } from '@/lib/config/rules';
 import { readFileSmart } from '@/lib/csv/encoding';
+import { downloadBlob } from '@/utils/downloadBlob';
 import { btnSecondary } from '@/utils/controls';
 import { ModalShell } from '@/features/analysis/components/ModalShell';
 import { FindingsTable } from '@/features/analysis/components/FindingsTable';
@@ -48,6 +51,16 @@ export function ConfigAuditModal({ onFindings, onClose }: ConfigAuditModalProps)
     onClose();
   };
 
+  const downloadReport = () => {
+    if (!result || !fileName) return;
+    const md = findingsToMarkdown(
+      result.findings,
+      { source: fileName },
+      { labelFor: (id) => ruleTitle(id) ?? id },
+    );
+    downloadBlob(`${baseName(fileName)}.security-report.md`, md, 'text/markdown');
+  };
+
   const issues = result?.findings.length ?? 0;
 
   return (
@@ -66,6 +79,14 @@ export function ConfigAuditModal({ onFindings, onClose }: ConfigAuditModalProps)
           <div className="flex items-center gap-2">
             <button type="button" onClick={onClose} className={btnSecondary}>
               Close
+            </button>
+            <button
+              type="button"
+              disabled={issues === 0}
+              onClick={downloadReport}
+              className={`${btnSecondary} disabled:cursor-not-allowed disabled:opacity-40`}
+            >
+              Download report
             </button>
             <button
               type="button"

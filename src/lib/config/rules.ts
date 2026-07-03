@@ -167,3 +167,10 @@ export const RULES_BY_SYNTAX: Record<ConfigSyntax, ConfigRule[]> = {
   ini: [],
   generic: [],
 };
+
+const ALL_RULES = [...SSH_RULES, ...NGINX_RULES, ...CISCO_RULES];
+
+/** Human-readable title for a rule id (across all dialects), for reports. */
+export function ruleTitle(id: string): string | undefined {
+  return ALL_RULES.find((r) => r.id === id)?.title;
+}
