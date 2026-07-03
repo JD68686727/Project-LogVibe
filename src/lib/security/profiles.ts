@@ -4,6 +4,7 @@ import { bruteForce } from './detectors/bruteForce';
 import { httpErrorBurst } from './detectors/httpErrorBurst';
 import { endpointEnum } from './detectors/endpointEnum';
 import { offHours } from './detectors/offHours';
+import { payloadSignatures } from './detectors/payloadSignatures';
 
 /**
  * A one-click defensive analysis. Each profile runs a detector over the current
@@ -41,6 +42,12 @@ export const SECURITY_PROFILES: SecurityProfile[] = [
     label: 'Off-hours activity',
     hint: '≥3 events outside 06:00–22:00 from one source',
     detect: (d, o) => offHours(d, o),
+  },
+  {
+    id: 'payload-injection',
+    label: 'Injection payloads',
+    hint: 'SQLi / XSS / path-traversal signatures in URLs & fields',
+    detect: (d, o) => payloadSignatures(d, o),
   },
 ];
 

@@ -14,6 +14,18 @@ export function guessColumn(dataset: Dataset, needles: readonly string[]): numbe
   });
 }
 
+/** Like `guessColumn` but returns every matching column index (e.g. all the
+ *  request/URL/UA fields a payload might hide in). */
+export function guessColumns(dataset: Dataset, needles: readonly string[]): number[] {
+  const out: number[] = [];
+  dataset.columns.forEach((c, i) => {
+    const key = c.key.toLowerCase();
+    const name = c.name.toLowerCase();
+    if (needles.some((n) => key.includes(n) || name.includes(n))) out.push(i);
+  });
+  return out;
+}
+
 export function cellText(v: CellValue): string {
   return v == null ? '' : String(v);
 }
@@ -48,4 +60,20 @@ export const ENDPOINT_NEEDLES = [
   'resource',
   'request',
   'port',
+] as const;
+
+/** Columns that may carry an attacker-controlled string (payload signatures). */
+export const PAYLOAD_TARGET_NEEDLES = [
+  'endpoint',
+  'url',
+  'uri',
+  'path',
+  'request',
+  'query',
+  'referer',
+  'referrer',
+  'agent',
+  'user_agent',
+  'payload',
+  'body',
 ] as const;

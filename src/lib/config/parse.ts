@@ -8,13 +8,23 @@ export interface ConfigEntry {
 }
 
 /** Supported config dialects. `generic` = whitespace-separated key/value. */
-export type ConfigSyntax = 'ssh' | 'nginx' | 'cisco' | 'ini' | 'generic';
+export type ConfigSyntax = 'ssh' | 'apache' | 'nginx' | 'cisco' | 'ini' | 'generic';
 
 /** Picks a dialect from the filename, then a light content sniff. */
 export function detectSyntax(fileName: string, text: string): ConfigSyntax {
   const n = fileName.toLowerCase();
   if (n.includes('ssh') || /^\s*(?:permitrootlogin|passwordauthentication)\b/im.test(text)) {
     return 'ssh';
+  }
+  // Apache before nginx: Apache's `Listen 80` would otherwise trip the nginx
+  // sniff. Match Apache-specific directives / block tags instead.
+  if (
+    n.includes('apache') ||
+    n.includes('httpd') ||
+    /^\s*(?:ServerTokens|ServerSignature|ServerRoot|DocumentRoot|LoadModule|TraceEnable)\b/im.test(text) ||
+    /^\s*<(?:VirtualHost|Directory)\b/im.test(text)
+  ) {
+    return 'apache';
   }
   if (
     n.includes('nginx') ||
@@ -109,6 +119,6 @@ export function parseConfig(text: string, syntax: ConfigSyntax): ConfigEntry[] {
     case 'cisco':
       return parseCiscoIos(text);
     default:
-      return parseSpaceKv(text); // ssh, generic
+      return parseSpaceKv(text); // ssh, apache, generic
   }
 }

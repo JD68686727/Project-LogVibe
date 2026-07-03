@@ -4,6 +4,7 @@ import { test, expect } from '@playwright/test';
 const SSHD = path.join(process.cwd(), 'samples', 'sshd_config');
 const NGINX = path.join(process.cwd(), 'samples', 'nginx.conf');
 const CISCO = path.join(process.cwd(), 'samples', 'cisco-ios.conf');
+const HTTPD = path.join(process.cwd(), 'samples', 'httpd.conf');
 
 test('config audit: sshd_config hardening issues are surfaced', async ({
   page,
@@ -44,4 +45,14 @@ test('config audit: cisco IOS dialect flags telnet', async ({ page }) => {
 
   await expect(modal.getByText(/CISCO ·/)).toBeVisible();
   await expect(modal.getByText('cisco-telnet-vty')).toBeVisible();
+});
+
+test('config audit: apache dialect flags HTTP TRACE', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Audit it for hardening issues' }).click();
+  const modal = page.getByTestId('config-audit');
+  await modal.locator('input[type="file"]').setInputFiles(HTTPD);
+
+  await expect(modal.getByText(/APACHE ·/)).toBeVisible();
+  await expect(modal.getByText('apache-trace-enable')).toBeVisible();
 });

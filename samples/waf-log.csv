@@ -1,0 +1,6 @@
+timestamp,method,url,status,client_ip
+2026-06-19T03:00:01,GET,/search?q=' OR 1=1 --,200,203.0.113.9
+2026-06-19T03:00:02,GET,/products?id=1 UNION SELECT password FROM users,500,203.0.113.9
+2026-06-19T03:00:03,GET,/page?next=<script>alert(1)</script>,200,203.0.113.9
+2026-06-19T03:00:04,GET,/download?file=../../../../etc/passwd,404,203.0.113.9
+2026-06-19T09:00:00,GET,/home,200,10.0.0.7

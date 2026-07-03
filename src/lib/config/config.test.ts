@@ -9,6 +9,16 @@ import {
 import { auditConfig, auditConfigText } from './audit';
 import { SSH_RULES, NGINX_RULES, CISCO_RULES } from './rules';
 
+const APACHE = `ServerRoot "/etc/httpd"
+Listen 80
+ServerTokens Full
+ServerSignature On
+TraceEnable On
+SSLProtocol all
+<Directory "/var/www/html">
+    Options Indexes FollowSymLinks
+</Directory>`;
+
 const SSHD = `# Managed by Ansible
 Port 22
 PermitRootLogin yes    # legacy
@@ -163,5 +173,35 @@ describe('cisco IOS dialect', () => {
         'cisco-http-server',
       ]),
     );
+  });
+});
+
+describe('apache dialect', () => {
+  it('detects apache by filename or content, not as nginx despite `Listen`', () => {
+    expect(detectSyntax('httpd.conf', APACHE)).toBe('apache');
+    expect(detectSyntax('config', 'ServerTokens Full')).toBe('apache');
+    expect(detectSyntax('site', 'Listen 80\nServerSignature On')).toBe('apache');
+  });
+
+  it('flags server tokens, TRACE, weak TLS, directory listing and missing HSTS', () => {
+    const ids = auditConfigText('httpd.conf', APACHE).findings.map((f) => f.rule);
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        'apache-server-tokens',
+        'apache-server-signature',
+        'apache-trace-enable',
+        'apache-weak-tls',
+        'apache-directory-listing',
+        'apache-hsts-missing',
+      ]),
+    );
+  });
+
+  it('does not flag hardened Options -Indexes or a present HSTS header', () => {
+    const hardened =
+      'Header always set Strict-Transport-Security "max-age=1"\n<Directory /x>\nOptions -Indexes\n</Directory>';
+    const ids = auditConfigText('httpd.conf', hardened).findings.map((f) => f.rule);
+    expect(ids).not.toContain('apache-directory-listing');
+    expect(ids).not.toContain('apache-hsts-missing');
   });
 });
