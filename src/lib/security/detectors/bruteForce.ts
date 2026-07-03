@@ -70,6 +70,7 @@ export function bruteForce(
         entity: ip,
         detail: `${best} failed attempts within ${Math.max(1, Math.round(bestSpanMs / 1000))}s`,
         count: best,
+        technique: 'T1110 · Brute Force',
       });
     }
   }

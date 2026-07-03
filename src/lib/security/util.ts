@@ -35,3 +35,17 @@ export const IP_NEEDLES = [
 ] as const;
 
 export const TIME_NEEDLES = ['timestamp', 'time', 'date'] as const;
+
+/** Common column-name hints for an HTTP status / response code. */
+export const STATUS_NEEDLES = ['status', 'code', 'response'] as const;
+
+/** Common column-name hints for a request target (URL / path / port). */
+export const ENDPOINT_NEEDLES = [
+  'endpoint',
+  'url',
+  'uri',
+  'path',
+  'resource',
+  'request',
+  'port',
+] as const;

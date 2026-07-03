@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { makeDataset, allRows } from '@/test/factory';
 import { bruteForce } from './detectors/bruteForce';
 import { httpErrorBurst } from './detectors/httpErrorBurst';
+import { endpointEnum } from './detectors/endpointEnum';
+import { offHours } from './detectors/offHours';
 import { runProfiles } from './profiles';
 
 /** 6 failed logins from .66 inside 60s, plus noise from other IPs. */
@@ -35,6 +37,7 @@ describe('bruteForce', () => {
     expect(findings[0].rule).toBe('brute-force');
     expect(findings[0].count).toBe(6);
     expect(findings[0].severity).toBe('high'); // 6 failures: ≥threshold(5) but < 3×threshold
+    expect(findings[0].technique).toBe('T1110 · Brute Force');
   });
 
   it('does not flag spread-out failures beyond the window', () => {
@@ -76,11 +79,68 @@ describe('httpErrorBurst', () => {
   });
 });
 
+describe('endpointEnum', () => {
+  it('flags a source hitting many distinct 4xx endpoints', () => {
+    const rows = Array.from({ length: 7 }, (_, i) => [404, `/admin/${i}`, '10.0.0.30']);
+    rows.push([200, '/home', '10.0.0.7']);
+    const ds = makeDataset(
+      [
+        { name: 'status_code', type: 'number' },
+        { name: 'endpoint', type: 'string' },
+        { name: 'client_ip', type: 'string' },
+      ],
+      rows,
+    );
+    const findings = endpointEnum(ds, allRows(ds));
+    expect(findings).toHaveLength(1);
+    expect(findings[0].entity).toBe('10.0.0.30');
+    expect(findings[0].count).toBe(7);
+    expect(findings[0].technique).toBe('T1595.003 · Wordlist Scanning');
+  });
+
+  it('ignores repeated hits on the same endpoint (distinct only)', () => {
+    const rows = Array.from({ length: 8 }, () => [404, '/login', '10.0.0.30']);
+    const ds = makeDataset(
+      [
+        { name: 'status_code', type: 'number' },
+        { name: 'endpoint', type: 'string' },
+        { name: 'client_ip', type: 'string' },
+      ],
+      rows,
+    );
+    expect(endpointEnum(ds, allRows(ds))).toEqual([]);
+  });
+});
+
+describe('offHours', () => {
+  it('flags a source with ≥threshold events outside business hours', () => {
+    const ds = makeDataset(
+      [
+        { name: 'timestamp', type: 'date' },
+        { name: 'src_ip', type: 'string' },
+      ],
+      [
+        ['2026-06-19T02:14:00', '10.0.0.99'],
+        ['2026-06-19T03:01:00', '10.0.0.99'],
+        ['2026-06-19T23:40:00', '10.0.0.99'],
+        ['2026-06-19T09:00:00', '10.0.0.99'], // business hours → ignored
+        ['2026-06-19T01:00:00', '10.0.0.7'], // below threshold
+      ],
+    );
+    const findings = offHours(ds, allRows(ds));
+    expect(findings).toHaveLength(1);
+    expect(findings[0].entity).toBe('10.0.0.99');
+    expect(findings[0].count).toBe(3);
+    expect(findings[0].technique).toBe('T1078 · Valid Accounts');
+  });
+});
+
 describe('runProfiles', () => {
   it('runs all profiles and concatenates findings', () => {
     const ds = authDataset();
     const findings = runProfiles(ds, allRows(ds));
-    // Only brute-force applies to this schema (no status column).
+    // Only brute-force applies to this schema (no status/endpoint column, and
+    // all events are during business hours).
     expect(findings.map((f) => f.rule)).toEqual(['brute-force']);
   });
 

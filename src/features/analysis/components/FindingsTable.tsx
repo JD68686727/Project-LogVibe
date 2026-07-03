@@ -10,6 +10,7 @@ export function FindingsTable({
   cap?: number;
 }) {
   const rows = sortFindings(findings).slice(0, cap);
+  const showTechnique = rows.some((f) => f.technique);
   return (
     <div className="overflow-auto rounded-lg border border-slate-200 dark:border-slate-800">
       <table className="w-full text-xs" data-testid="findings-table">
@@ -17,6 +18,7 @@ export function FindingsTable({
           <tr>
             <th className="px-2 py-1.5">Severity</th>
             <th className="px-2 py-1.5">Rule</th>
+            {showTechnique && <th className="px-2 py-1.5">ATT&amp;CK</th>}
             <th className="px-2 py-1.5">Entity</th>
             <th className="px-2 py-1.5">Detail</th>
             <th className="px-2 py-1.5 text-right">Count</th>
@@ -31,6 +33,11 @@ export function FindingsTable({
               <td className="whitespace-nowrap px-2 py-1 font-mono text-slate-500 dark:text-slate-400">
                 {f.rule}
               </td>
+              {showTechnique && (
+                <td className="whitespace-nowrap px-2 py-1 text-slate-500 dark:text-slate-400">
+                  {f.technique ?? ''}
+                </td>
+              )}
               <td className="whitespace-nowrap px-2 py-1 font-mono text-slate-700 dark:text-slate-200">
                 {f.entity}
               </td>
