@@ -1,13 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import type { Dataset } from '@/types/dataset';
 import { findingsToDataset } from '@/lib/analysis/findings';
 import { findingsToMarkdown } from '@/lib/analysis/report';
-import { runProfiles, SECURITY_PROFILES } from '@/lib/security/profiles';
+import { SECURITY_PROFILES } from '@/lib/security/profiles';
 import { makeCellRedactor } from '@/lib/export/redact';
 import { downloadBlob } from '@/utils/downloadBlob';
 import { btnSecondary } from '@/utils/controls';
 import { ModalShell } from '@/features/analysis/components/ModalShell';
 import { FindingsTable } from '@/features/analysis/components/FindingsTable';
+import { useSecurityScan } from '../hooks/useSecurityScan';
 
 const checkbox =
   'h-3.5 w-3.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500/30 dark:border-slate-600 dark:bg-slate-700';
@@ -34,8 +35,9 @@ export function SecurityScanModal({
   onOpenDataset,
   onClose,
 }: SecurityScanModalProps) {
-  const findings = useMemo(() => runProfiles(dataset, order), [dataset, order]);
+  const { findings, scanning } = useSecurityScan(dataset, order);
   const [redactReport, setRedactReport] = useState(false);
+  const busy = scanning || findings.length === 0;
 
   const openAsDataset = () => {
     onOpenDataset(
@@ -73,11 +75,13 @@ export function SecurityScanModal({
         <>
           <div className="flex flex-wrap items-center gap-3">
             <p className="text-xs text-slate-400 dark:text-slate-500">
-              {findings.length > 0
-                ? `${findings.length} finding${findings.length === 1 ? '' : 's'} across ${order.length.toLocaleString()} rows`
-                : 'No threats detected by the active profiles.'}
+              {scanning
+                ? `Scanning ${order.length.toLocaleString()} rows…`
+                : findings.length > 0
+                  ? `${findings.length} finding${findings.length === 1 ? '' : 's'} across ${order.length.toLocaleString()} rows`
+                  : 'No threats detected by the active profiles.'}
             </p>
-            {findings.length > 0 && (
+            {!scanning && findings.length > 0 && (
               <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                 <input
                   type="checkbox"
@@ -95,7 +99,7 @@ export function SecurityScanModal({
             </button>
             <button
               type="button"
-              disabled={findings.length === 0}
+              disabled={busy}
               onClick={downloadReport}
               className={`${btnSecondary} disabled:cursor-not-allowed disabled:opacity-40`}
             >
@@ -103,7 +107,7 @@ export function SecurityScanModal({
             </button>
             <button
               type="button"
-              disabled={findings.length === 0}
+              disabled={busy}
               onClick={openAsDataset}
               className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -150,7 +154,12 @@ export function SecurityScanModal({
       </section>
 
       {/* Findings */}
-      {findings.length > 0 ? (
+      {scanning ? (
+        <p className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-slate-200 px-3 py-6 text-center text-xs text-slate-400 dark:border-slate-700 dark:text-slate-500">
+          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-300 border-t-brand-500 dark:border-slate-600 dark:border-t-brand-400" />
+          Scanning off the main thread…
+        </p>
+      ) : findings.length > 0 ? (
         <section className="space-y-1.5">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
             Findings
