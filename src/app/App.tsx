@@ -7,6 +7,7 @@ import { ParseStatus } from '@/features/ingestion/components/ParseStatus';
 import { LogPatternBuilder } from '@/features/ingestion/components/LogPatternBuilder';
 import { ConfigAuditModal } from '@/features/config/components/ConfigAuditModal';
 import { SAMPLES, sampleToFile } from '@/features/ingestion/sampleData';
+import { KeyboardShortcuts } from '@/features/help/components/KeyboardShortcuts';
 import { useWorkspace } from '@/features/workspace/hooks/useWorkspace';
 import { WorkspaceBar } from '@/features/workspace/components/WorkspaceBar';
 import { useSharedView } from '@/features/sharing/hooks/useSharedView';
@@ -33,6 +34,7 @@ export function App() {
   const [mode, setMode] = useState<WorkspaceMode>('analyze');
   const [showBuilder, setShowBuilder] = useState(false);
   const [showAudit, setShowAudit] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const lastAddedRef = useRef<Dataset | null>(null);
   const { addDataset } = ws;
 
@@ -63,6 +65,25 @@ export function App() {
     }
   }, [status, dataset, addDataset, reset]);
 
+  // `?` opens the keyboard-shortcuts sheet (ignored while typing in a field).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== '?') return;
+      const t = e.target as HTMLElement | null;
+      if (
+        t &&
+        (t.tagName === 'INPUT' ||
+          t.tagName === 'TEXTAREA' ||
+          t.tagName === 'SELECT' ||
+          t.isContentEditable)
+      )
+        return;
+      setShowShortcuts(true);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const hasFiles = ws.files.length > 0;
 
   return (
@@ -83,6 +104,15 @@ export function App() {
           <div className="ml-auto flex items-center gap-3">
             <TimezoneSelect tz={tz} onChange={setTimezone} />
             <ThemeToggle theme={theme} onChange={setTheme} />
+            <button
+              type="button"
+              onClick={() => setShowShortcuts(true)}
+              aria-label="Keyboard shortcuts"
+              title="Keyboard shortcuts (?)"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            >
+              ?
+            </button>
           </div>
         </div>
       </header>
@@ -229,6 +259,10 @@ export function App() {
           onFindings={handleAuditDataset}
           onClose={() => setShowAudit(false)}
         />
+      )}
+
+      {showShortcuts && (
+        <KeyboardShortcuts onClose={() => setShowShortcuts(false)} />
       )}
     </div>
   );
