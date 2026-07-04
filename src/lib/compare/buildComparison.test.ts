@@ -88,6 +88,42 @@ describe('buildComparison', () => {
     expect(info.B).toBe(5);
   });
 
+  it('time-sync: a per-file offset aligns a clock skew into the same bucket', () => {
+    const a = makeDataset(
+      [{ name: 'ts', type: 'date' }],
+      [['2026-06-19T08:10:00Z'], ['2026-06-19T08:50:00Z']],
+    );
+    // B's clock runs 1 hour behind A.
+    const b = makeDataset(
+      [{ name: 'ts', type: 'date' }],
+      [['2026-06-19T07:10:00Z'], ['2026-06-19T07:50:00Z']],
+    );
+    const config = cfg({ dimensionKey: 'ts', bucket: 'hour' });
+
+    // No offset → A in the 08:00 bucket, B in 07:00: two distinct categories.
+    const before = buildComparison(
+      [
+        { label: 'A', dataset: a, order: allRows(a) },
+        { label: 'B', dataset: b, order: allRows(b) },
+      ],
+      config,
+      'UTC',
+    );
+    expect(before.groupCount).toBe(2);
+
+    // +3600s on B pulls it forward into 08:00: one aligned category.
+    const after = buildComparison(
+      [
+        { label: 'A', dataset: a, order: allRows(a) },
+        { label: 'B', dataset: b, order: allRows(b), offsetMs: 3_600_000 },
+      ],
+      config,
+      'UTC',
+    );
+    expect(after.groupCount).toBe(1);
+    expect(after.data[0]).toEqual({ name: '2026-06-19 08:00', A: 2, B: 2 });
+  });
+
   it("respects each file's per-file order (filtered subset)", () => {
     // Only count fileA's ERROR row (index 2); fileB unfiltered.
     const res = buildComparison(

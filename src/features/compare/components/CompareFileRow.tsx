@@ -1,5 +1,6 @@
 import type { ColumnFilter } from '@/types/filter';
 import { cn } from '@/utils/cn';
+import { inputCls } from '@/utils/controls';
 import { FilterRow } from '@/features/filtering/components/FilterRow';
 import type { CompareFileItem } from '../hooks/useCompareConfig';
 
@@ -13,6 +14,9 @@ export interface CompareFileRowProps {
     patch: Partial<ColumnFilter>,
   ) => void;
   onRemoveFilter: (fileId: string, filterId: string) => void;
+  /** Shown only when grouping by a bucketed date column (time-sync). */
+  showOffset?: boolean;
+  onOffsetChange: (fileId: string, seconds: number) => void;
 }
 
 /** One file in compare: include toggle + its own filter editor + filtered count. */
@@ -22,6 +26,8 @@ export function CompareFileRow({
   onAddFilter,
   onUpdateFilter,
   onRemoveFilter,
+  showOffset,
+  onOffsetChange,
 }: CompareFileRowProps) {
   const isFiltered = item.filteredRows !== item.rows;
 
@@ -65,13 +71,30 @@ export function CompareFileRow({
           {item.filteredRows.toLocaleString()} of {item.rows.toLocaleString()} rows
         </span>
 
-        <button
-          type="button"
-          onClick={() => onAddFilter(item.id)}
-          className="ml-auto rounded-md px-2 py-1 text-xs font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10"
-        >
-          + Filter
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          {showOffset && (
+            <label className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+              Offset
+              <input
+                type="number"
+                aria-label={`Time offset in seconds for ${item.label}`}
+                value={item.offsetSeconds}
+                onChange={(e) =>
+                  onOffsetChange(item.id, Number(e.target.value) || 0)
+                }
+                className={cn(inputCls, 'w-20 px-1.5 py-0.5 text-xs')}
+              />
+              s
+            </label>
+          )}
+          <button
+            type="button"
+            onClick={() => onAddFilter(item.id)}
+            className="rounded-md px-2 py-1 text-xs font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10"
+          >
+            + Filter
+          </button>
+        </div>
       </div>
 
       {item.filters.length > 0 && (

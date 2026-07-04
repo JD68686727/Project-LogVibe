@@ -185,7 +185,7 @@ export function App() {
                     <ChartSkeleton className="h-96" label="Loading comparison…" />
                   }
                 >
-                  <CompareView files={ws.files} />
+                  <CompareView files={ws.files} timeZone={tz} />
                 </Suspense>
               </ErrorBoundary>
             )}

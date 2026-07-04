@@ -11,20 +11,22 @@ function pad(n: number): string {
  * timestamp. Labels are zero-padded (`2026-06-19 08:00`, `2026-06`) so the
  * line-chart's lexical name sort stays chronological. Bucketing happens in the
  * given display `tz` (default UTC) so it's deterministic across machines and
- * consistent with the table. Unparseable input is returned as-is so no rows are
- * silently dropped.
+ * consistent with the table. `offsetMs` shifts the instant before bucketing —
+ * used by Compare time-sync to align two logs with a clock skew. Unparseable
+ * input is returned as-is so no rows are silently dropped.
  */
 export function bucketDate(
   raw: string,
   bucket: DateBucket,
   tz: string = DEFAULT_TZ,
+  offsetMs = 0,
 ): string {
   if (bucket === 'none') return raw;
 
   const t = parseToInstant(raw);
   if (t == null) return raw;
 
-  const { year, month, day, hour } = zonedParts(t, tz);
+  const { year, month, day, hour } = zonedParts(t + offsetMs, tz);
 
   switch (bucket) {
     case 'hour':

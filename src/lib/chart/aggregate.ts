@@ -43,6 +43,7 @@ export function aggregateToMap(
   order: number[],
   config: ChartConfig,
   tz: string = DEFAULT_TZ,
+  offsetMs = 0,
 ): Map<string, number> {
   const dimIdx = dataset.columnIndex[config.dimensionKey];
   if (dimIdx == null) return new Map();
@@ -64,7 +65,7 @@ export function aggregateToMap(
       dimCell == null
         ? '(empty)'
         : useBucket
-          ? bucketDate(String(dimCell), bucket, tz)
+          ? bucketDate(String(dimCell), bucket, tz, offsetMs)
           : String(dimCell);
 
     let g = groups.get(name);

@@ -2,6 +2,7 @@ import type { Dataset } from '@/types/dataset';
 import type { ChartConfig } from '@/types/chart';
 import type { CompareConfig, CompareResult, CompareSeriesRow } from '@/types/compare';
 import { aggregateToMap } from '@/lib/chart/aggregate';
+import { DEFAULT_TZ } from '@/lib/time/timezone';
 
 /** Categories shown in the overlay before truncation. */
 const MAX_CATEGORIES = 60;
@@ -12,6 +13,9 @@ export interface CompareInput {
   dataset: Dataset;
   /** Row indices to aggregate for this file (its per-file filtered subset). */
   order: number[];
+  /** Time-sync shift (ms) applied to this file's date dimension before
+   *  bucketing, to align a clock skew against the other files. */
+  offsetMs?: number;
 }
 
 /**
@@ -24,6 +28,7 @@ export interface CompareInput {
 export function buildComparison(
   files: CompareInput[],
   config: CompareConfig,
+  tz: string = DEFAULT_TZ,
 ): CompareResult {
   const chartConfig: ChartConfig = {
     type: config.type,
@@ -35,7 +40,7 @@ export function buildComparison(
 
   const perFile = files.map((f) => ({
     label: f.label,
-    map: aggregateToMap(f.dataset, f.order, chartConfig),
+    map: aggregateToMap(f.dataset, f.order, chartConfig, tz, f.offsetMs ?? 0),
   }));
 
   // Union of categories with their cross-file total (used to order bars).

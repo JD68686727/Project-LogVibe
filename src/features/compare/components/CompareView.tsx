@@ -3,6 +3,7 @@ import type { CompareChartType } from '@/types/compare';
 import type { LoadedFile } from '@/types/workspace';
 import { cn } from '@/utils/cn';
 import { selectCls } from '@/utils/controls';
+import { DEFAULT_TZ } from '@/lib/time/timezone';
 import { useCompareConfig } from '../hooks/useCompareConfig';
 import { CompareChart } from './CompareChart';
 import { CompareDiff } from './CompareDiff';
@@ -31,15 +32,18 @@ const BUCKETS: { value: DateBucket; label: string }[] = [
 
 export interface CompareViewProps {
   files: LoadedFile[];
+  /** Display timezone for date buckets (default UTC). */
+  timeZone?: string;
 }
 
-export function CompareView({ files }: CompareViewProps) {
+export function CompareView({ files, timeZone = DEFAULT_TZ }: CompareViewProps) {
   const {
     files: fileItems,
     toggleFile,
     addFileFilter,
     updateFileFilter,
     removeFileFilter,
+    setFileOffset,
     commonCols,
     commonNumeric,
     config,
@@ -51,7 +55,10 @@ export function CompareView({ files }: CompareViewProps) {
     setAggregation,
     setBucket,
     result,
-  } = useCompareConfig(files);
+  } = useCompareConfig(files, timeZone);
+
+  // Time-sync offsets only make sense when overlaying a bucketed date axis.
+  const showOffset = dimensionIsDate && config.bucket !== 'none';
 
   if (files.length < 2) {
     return (
@@ -75,9 +82,16 @@ export function CompareView({ files }: CompareViewProps) {
     <div className="space-y-3">
       {/* Files — each with its own filter (compare filtered subsets) */}
       <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
-        <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-          Files
-        </span>
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+            Files
+          </span>
+          {showOffset && (
+            <span className="text-xs text-slate-400 dark:text-slate-500">
+              Time-sync: shift a file&apos;s timestamps (seconds) to align a clock skew
+            </span>
+          )}
+        </div>
         <div className="space-y-2">
           {fileItems.map((f) => (
             <CompareFileRow
@@ -87,6 +101,8 @@ export function CompareView({ files }: CompareViewProps) {
               onAddFilter={addFileFilter}
               onUpdateFilter={updateFileFilter}
               onRemoveFilter={removeFileFilter}
+              showOffset={showOffset}
+              onOffsetChange={setFileOffset}
             />
           ))}
         </div>

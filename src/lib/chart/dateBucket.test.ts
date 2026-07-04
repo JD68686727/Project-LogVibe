@@ -27,6 +27,14 @@ describe('bucketDate', () => {
     expect(bucketDate(z, 'day', 'UTC')).toBe('2026-06-19');
   });
 
+  it('shifts the instant by offsetMs before bucketing (time-sync)', () => {
+    const z = '2026-06-19T08:40:00Z';
+    // +1h offset pushes 08:40 into the 09:00 hour bucket.
+    expect(bucketDate(z, 'hour', 'UTC', 3_600_000)).toBe('2026-06-19 09:00');
+    // −1h pulls it back to 07:00.
+    expect(bucketDate(z, 'hour', 'UTC', -3_600_000)).toBe('2026-06-19 07:00');
+  });
+
   it('produces chronologically sortable labels', () => {
     const labels = ['2026-06-19T23:30', '2026-06-20T00:15', '2026-06-19T09:00'].map(
       (s) => bucketDate(s, 'hour'),
