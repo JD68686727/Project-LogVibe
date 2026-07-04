@@ -9,6 +9,7 @@ import { buildComparison } from '@/lib/compare/buildComparison';
 import { applyFilters } from '@/lib/filter/applyFilters';
 import { operatorsForType } from '@/lib/filter/operators';
 import { seriesColor } from '@/utils/chartColors';
+import { DEFAULT_TZ } from '@/lib/time/timezone';
 
 let filterIdCounter = 0;
 const nextFilterId = () => `cmpf-${++filterIdCounter}`;
@@ -34,6 +35,8 @@ export interface CompareFileItem {
   /** This file's dataset, for rendering its filter editor. */
   dataset: Dataset;
   filters: ColumnFilter[];
+  /** Time-sync offset (seconds) applied to this file's date dimension. */
+  offsetSeconds: number;
 }
 
 export interface UseCompareConfig {
@@ -46,6 +49,8 @@ export interface UseCompareConfig {
     patch: Partial<ColumnFilter>,
   ) => void;
   removeFileFilter: (fileId: string, filterId: string) => void;
+  /** Sets a file's time-sync offset in seconds (may be negative). */
+  setFileOffset: (fileId: string, seconds: number) => void;
   commonCols: ColumnSchema[];
   commonNumeric: ColumnSchema[];
   config: ConfigState;
@@ -72,11 +77,15 @@ function buildLabels(files: LoadedFile[]): Map<string, string> {
   return out;
 }
 
-export function useCompareConfig(files: LoadedFile[]): UseCompareConfig {
+export function useCompareConfig(
+  files: LoadedFile[],
+  tz: string = DEFAULT_TZ,
+): UseCompareConfig {
   const [excluded, setExcluded] = useState<Set<string>>(() => new Set());
   const [filtersByFile, setFiltersByFile] = useState<
     Record<string, ColumnFilter[]>
   >({});
+  const [offsetByFile, setOffsetByFile] = useState<Record<string, number>>({});
   const [cfg, setCfg] = useState<ConfigState>({
     type: 'bar',
     dimensionKey: '',
@@ -143,6 +152,7 @@ export function useCompareConfig(files: LoadedFile[]): UseCompareConfig {
     color: colorById.get(f.id),
     dataset: f.dataset,
     filters: filtersByFile[f.id] ?? [],
+    offsetSeconds: offsetByFile[f.id] ?? 0,
   }));
 
   const result = useMemo<CompareResult>(() => {
@@ -154,8 +164,10 @@ export function useCompareConfig(files: LoadedFile[]): UseCompareConfig {
         label: labels.get(f.id) ?? f.dataset.meta.fileName,
         dataset: f.dataset,
         order: orderById.get(f.id) ?? [],
+        offsetMs: (offsetByFile[f.id] ?? 0) * 1000,
       })),
       { ...effectiveConfig, fileIds: included.map((f) => f.id) },
+      tz,
     );
     // effectiveConfig is derived from the listed primitives; orderById carries
     // the per-file filters.
@@ -164,6 +176,8 @@ export function useCompareConfig(files: LoadedFile[]): UseCompareConfig {
     included,
     labels,
     orderById,
+    offsetByFile,
+    tz,
     dimensionKey,
     measureKey,
     cfg.type,
@@ -216,6 +230,10 @@ export function useCompareConfig(files: LoadedFile[]): UseCompareConfig {
     }));
   }, []);
 
+  const setFileOffset = useCallback((fileId: string, seconds: number) => {
+    setOffsetByFile((prev) => ({ ...prev, [fileId]: seconds }));
+  }, []);
+
   const setType = useCallback(
     (type: CompareChartType) => setCfg((p) => ({ ...p, type })),
     [],
@@ -243,6 +261,7 @@ export function useCompareConfig(files: LoadedFile[]): UseCompareConfig {
     addFileFilter,
     updateFileFilter,
     removeFileFilter,
+    setFileOffset,
     commonCols,
     commonNumeric,
     config: effectiveConfig,
