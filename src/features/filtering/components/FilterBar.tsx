@@ -142,6 +142,7 @@ export function FilterBar({
             Filters
           </span>
           <span
+            aria-live="polite"
             className={
               isFiltered
                 ? 'rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-700 dark:bg-brand-500/20 dark:text-brand-300'
