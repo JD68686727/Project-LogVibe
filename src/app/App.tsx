@@ -6,6 +6,7 @@ import { DropZone } from '@/features/ingestion/components/DropZone';
 import { ParseStatus } from '@/features/ingestion/components/ParseStatus';
 import { LogPatternBuilder } from '@/features/ingestion/components/LogPatternBuilder';
 import { ConfigAuditModal } from '@/features/config/components/ConfigAuditModal';
+import { SAMPLES, sampleToFile } from '@/features/ingestion/sampleData';
 import { useWorkspace } from '@/features/workspace/hooks/useWorkspace';
 import { WorkspaceBar } from '@/features/workspace/components/WorkspaceBar';
 import { useSharedView } from '@/features/sharing/hooks/useSharedView';
@@ -120,6 +121,29 @@ export function App() {
                 Audit it for hardening issues
               </button>
             </p>
+
+            <div className="mx-auto mt-8 max-w-2xl">
+              <p className="text-center text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                Or try a sample — nothing is uploaded
+              </p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                {SAMPLES.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => parseFile(sampleToFile(s))}
+                    className="flex flex-col gap-0.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left transition-colors hover:border-brand-400 hover:bg-brand-50/40 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-brand-500 dark:hover:bg-brand-500/10"
+                  >
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                      {s.label}
+                    </span>
+                    <span className="text-xs text-slate-400 dark:text-slate-500">
+                      {s.description}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">

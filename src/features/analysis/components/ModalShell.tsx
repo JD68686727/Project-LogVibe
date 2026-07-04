@@ -28,6 +28,12 @@ export function ModalShell({
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  // Return focus to whatever opened the dialog when it closes (a11y).
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    return () => opener?.focus?.();
+  }, []);
+
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-auto p-4 sm:p-8">
       <button

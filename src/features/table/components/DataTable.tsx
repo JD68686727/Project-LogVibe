@@ -75,7 +75,12 @@ export function DataTable({
 
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div ref={parentRef} className="relative max-h-[70vh] overflow-auto">
+      <div
+        ref={parentRef}
+        role="region"
+        aria-label="Data table"
+        className="relative max-h-[70vh] overflow-auto"
+      >
         {/* Header — sticky vertically, scrolls horizontally with the body. */}
         <div
           className="sticky top-0 z-10 grid border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300"
