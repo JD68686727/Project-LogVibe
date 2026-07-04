@@ -23,11 +23,13 @@ export interface StatsPanelProps {
   order: number[];
   /** When provided, distributions become clickable to drill into a filter. */
   onAddFilter?: (filter: Omit<ColumnFilter, 'id'>) => void;
+  /** Display timezone for date distribution labels. */
+  timeZone?: string;
 }
 
 const numCell = 'px-3 py-2 text-right font-mono tabular-nums text-slate-600 dark:text-slate-300';
 
-export function StatsPanel({ dataset, order, onAddFilter }: StatsPanelProps) {
+export function StatsPanel({ dataset, order, onAddFilter, timeZone }: StatsPanelProps) {
   const [expanded, setExpanded] = useState(false);
   const [open, setOpen] = useState<{ key: string; anchor: HTMLElement } | null>(
     null,
@@ -48,6 +50,7 @@ export function StatsPanel({ dataset, order, onAddFilter }: StatsPanelProps) {
           <DistributionDetail
             column={{ key: col.key, name: col.name, type: col.type }}
             dist={distributions[idx]}
+            tz={timeZone}
             onPick={(filter) => {
               onAddFilter(filter);
               setOpen(null);
@@ -145,7 +148,11 @@ export function StatsPanel({ dataset, order, onAddFilter }: StatsPanelProps) {
                   <td className="px-3 py-2">
                     {distributions &&
                       (distributions[i].kind === 'empty' || !onAddFilter ? (
-                        <MiniDistribution dist={distributions[i]} />
+                        <MiniDistribution
+                          dist={distributions[i]}
+                          columnType={s.type}
+                          tz={timeZone}
+                        />
                       ) : (
                         <button
                           type="button"
@@ -160,7 +167,11 @@ export function StatsPanel({ dataset, order, onAddFilter }: StatsPanelProps) {
                           aria-expanded={open?.key === s.key}
                           className="rounded transition hover:ring-2 hover:ring-brand-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                         >
-                          <MiniDistribution dist={distributions[i]} />
+                          <MiniDistribution
+                            dist={distributions[i]}
+                            columnType={s.type}
+                            tz={timeZone}
+                          />
                         </button>
                       ))}
                   </td>

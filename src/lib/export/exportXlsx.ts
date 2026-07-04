@@ -1,4 +1,5 @@
 import type { CellValue, ColumnSchema, Dataset } from '@/types/dataset';
+import { formatTimestamp } from '@/lib/time/timezone';
 
 const XLSX_MIME =
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -20,6 +21,7 @@ export async function datasetToXlsxBlob(
   order: number[],
   columns: ColumnSchema[] = dataset.columns,
   redact?: (cell: CellValue) => CellValue,
+  tz?: string,
 ): Promise<Blob> {
   const { utils, write } = await import('xlsx');
 
@@ -30,7 +32,10 @@ export async function datasetToXlsxBlob(
     const row = dataset.rows[rowIdx];
     aoa.push(
       columns.map((c) => {
-        const v = row[dataset.columnIndex[c.key]];
+        let v = row[dataset.columnIndex[c.key]];
+        if (tz && c.type === 'date' && v != null) {
+          v = formatTimestamp(String(v), tz);
+        }
         return cell(redact ? redact(v) : v);
       }),
     );

@@ -253,6 +253,7 @@ export function DataWorkspace({
             dataset={dataset}
             order={order}
             columns={visibleColumns}
+            timeZone={timeZone}
           />
         </div>
       </div>
@@ -261,6 +262,7 @@ export function DataWorkspace({
         dataset={dataset}
         order={filteredOrder}
         onAddFilter={filtersApi.addColumnFilter}
+        timeZone={timeZone}
       />
 
       <DataTable
