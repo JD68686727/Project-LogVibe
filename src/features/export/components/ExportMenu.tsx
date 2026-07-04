@@ -23,6 +23,8 @@ export interface ExportMenuProps {
   order: number[];
   /** Visible columns (ordered) — export mirrors the visible table. */
   columns: ColumnSchema[];
+  /** Current display timezone; enables the "dates in zone" export option. */
+  timeZone?: string;
 }
 
 const item =
@@ -31,13 +33,16 @@ const ext = 'font-mono text-xs text-slate-400 dark:text-slate-500';
 const checkbox =
   'h-3.5 w-3.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500/30 dark:border-slate-600 dark:bg-slate-700';
 
-export function ExportMenu({ dataset, order, columns }: ExportMenuProps) {
+export function ExportMenu({ dataset, order, columns, timeZone }: ExportMenuProps) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [redact, setRedact] = useState(false);
   const [cats, setCats] = useState<string[]>(() => REDACTABLE.map((r) => r.id));
   const [mode, setMode] = useState<RedactionMode>('consistent');
+  const [datesInZone, setDatesInZone] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  const hasDate = columns.some((c) => c.type === 'date');
 
   useEffect(() => {
     if (!open) return;
@@ -50,6 +55,7 @@ export function ExportMenu({ dataset, order, columns }: ExportMenuProps) {
 
   const name = dataset.meta.fileName;
   const redacting = redact && cats.length > 0;
+  const exportTz = datesInZone && hasDate ? timeZone : undefined;
 
   const toggleCat = (id: string) =>
     setCats((prev) =>
@@ -59,19 +65,22 @@ export function ExportMenu({ dataset, order, columns }: ExportMenuProps) {
   // A fresh redactor per export keeps consistent-dummy numbering per file.
   const exportCsv = useCallback(() => {
     const r = redacting ? makeCellRedactor(cats, mode) : undefined;
-    downloadBlob(exportName(name, 'csv', redacting), datasetToCsv(dataset, order, columns, r));
+    downloadBlob(
+      exportName(name, 'csv', redacting),
+      datasetToCsv(dataset, order, columns, r, exportTz),
+    );
     setOpen(false);
-  }, [dataset, order, columns, name, redacting, cats, mode]);
+  }, [dataset, order, columns, name, redacting, cats, mode, exportTz]);
 
   const exportJson = useCallback(() => {
     const r = redacting ? makeCellRedactor(cats, mode) : undefined;
     downloadBlob(
       exportName(name, 'json', redacting),
-      datasetToJson(dataset, order, columns, r),
+      datasetToJson(dataset, order, columns, r, exportTz),
       'application/json',
     );
     setOpen(false);
-  }, [dataset, order, columns, name, redacting, cats, mode]);
+  }, [dataset, order, columns, name, redacting, cats, mode, exportTz]);
 
   const exportXlsx = useCallback(async () => {
     setBusy(true);
@@ -81,13 +90,13 @@ export function ExportMenu({ dataset, order, columns }: ExportMenuProps) {
       const { datasetToXlsxBlob } = await import('@/lib/export/exportXlsx');
       downloadBlob(
         exportName(name, 'xlsx', redacting),
-        await datasetToXlsxBlob(dataset, order, columns, r),
+        await datasetToXlsxBlob(dataset, order, columns, r, exportTz),
       );
       setOpen(false);
     } finally {
       setBusy(false);
     }
-  }, [dataset, order, columns, name, redacting, cats, mode]);
+  }, [dataset, order, columns, name, redacting, cats, mode, exportTz]);
 
   return (
     <div ref={ref} className="relative">
@@ -170,6 +179,23 @@ export function ExportMenu({ dataset, order, columns }: ExportMenuProps) {
               </div>
             )}
           </div>
+
+          {hasDate && timeZone && (
+            <div className="border-b border-slate-100 px-3 py-2 dark:border-slate-800">
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                <input
+                  type="checkbox"
+                  checked={datesInZone}
+                  onChange={(e) => setDatesInZone(e.target.checked)}
+                  className={checkbox}
+                />
+                Dates in{' '}
+                <span className="font-mono text-xs text-slate-500 dark:text-slate-400">
+                  {timeZone}
+                </span>
+              </label>
+            </div>
+          )}
           <button type="button" onClick={exportCsv} aria-label="CSV" className={item}>
             CSV<span className={ext}>.csv</span>
           </button>

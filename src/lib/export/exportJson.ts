@@ -1,4 +1,5 @@
 import type { CellValue, ColumnSchema, Dataset } from '@/types/dataset';
+import { formatTimestamp } from '@/lib/time/timezone';
 
 /**
  * Serializes the rows referenced by `order` (the current filtered + sorted
@@ -12,12 +13,16 @@ export function datasetToJson(
   order: number[],
   columns: ColumnSchema[] = dataset.columns,
   redact?: (cell: CellValue) => CellValue,
+  tz?: string,
 ): string {
   const data = order.map((rowIdx) => {
     const row = dataset.rows[rowIdx];
     const obj: Record<string, CellValue> = {};
     for (const c of columns) {
-      const cell = row[dataset.columnIndex[c.key]];
+      let cell = row[dataset.columnIndex[c.key]];
+      if (tz && c.type === 'date' && cell != null) {
+        cell = formatTimestamp(String(cell), tz);
+      }
       obj[c.name] = redact ? redact(cell) : cell;
     }
     return obj;

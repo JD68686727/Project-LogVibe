@@ -1,5 +1,6 @@
 import Papa from 'papaparse';
 import type { CellValue, ColumnSchema, Dataset } from '@/types/dataset';
+import { formatTimestamp } from '@/lib/time/timezone';
 
 /** Papa.unparse stringifies primitives and renders null/'' as empty fields. */
 function cellToField(cell: CellValue): string | number | boolean {
@@ -18,12 +19,16 @@ export function datasetToCsv(
   order: number[],
   columns: ColumnSchema[] = dataset.columns,
   redact?: (cell: CellValue) => CellValue,
+  tz?: string,
 ): string {
   const fields = columns.map((c) => c.name);
   const data = order.map((rowIdx) => {
     const row = dataset.rows[rowIdx];
     return columns.map((c) => {
-      const cell = row[dataset.columnIndex[c.key]];
+      let cell = row[dataset.columnIndex[c.key]];
+      if (tz && c.type === 'date' && cell != null) {
+        cell = formatTimestamp(String(cell), tz);
+      }
       return cellToField(redact ? redact(cell) : cell);
     });
   });

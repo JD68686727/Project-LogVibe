@@ -2,6 +2,7 @@ import type { ColumnType } from '@/types/dataset';
 import type { ColumnDistribution } from '@/types/stats';
 import { seriesColor } from '@/utils/chartColors';
 import { formatNumber } from '@/utils/formatNumber';
+import { formatTimestamp } from '@/lib/time/timezone';
 import {
   binBounds,
   categoricalFilter,
@@ -20,6 +21,8 @@ export interface DistributionDetailProps {
   dist: ColumnDistribution;
   /** Called with a ready-to-add filter when a bin or value is clicked. */
   onPick: (filter: NewFilter) => void;
+  /** Display timezone; date values are shown in it (the filter stays raw). */
+  tz?: string;
 }
 
 const heading = 'mb-2 text-xs font-semibold text-slate-500 dark:text-slate-400';
@@ -30,7 +33,11 @@ export function DistributionDetail({
   column,
   dist,
   onPick,
+  tz,
 }: DistributionDetailProps) {
+  const display = (value: string) =>
+    column.type === 'date' && tz ? formatTimestamp(value, tz) : value;
+
   if (dist.kind === 'empty') {
     return (
       <p className="w-48 text-sm text-slate-400 dark:text-slate-500">
@@ -83,7 +90,7 @@ export function DistributionDetail({
             <button
               type="button"
               onClick={() => onPick(categoricalFilter(column.key, column.type, t.value))}
-              aria-label={`Filter ${column.name} = ${t.value}`}
+              aria-label={`Filter ${column.name} = ${display(t.value)}`}
               className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-slate-50 dark:hover:bg-slate-800"
             >
               <span
@@ -91,7 +98,7 @@ export function DistributionDetail({
                 style={{ backgroundColor: seriesColor(i) }}
               />
               <span className="flex-1 truncate text-sm text-slate-700 dark:text-slate-200">
-                {t.value}
+                {display(t.value)}
               </span>
               <span className="font-mono text-xs tabular-nums text-slate-400 dark:text-slate-500">
                 {formatNumber(t.count)}

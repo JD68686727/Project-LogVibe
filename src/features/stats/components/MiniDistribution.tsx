@@ -1,13 +1,21 @@
+import type { ColumnType } from '@/types/dataset';
 import type { ColumnDistribution } from '@/types/stats';
 import { seriesColor } from '@/utils/chartColors';
 import { formatNumber } from '@/utils/formatNumber';
+import { formatTimestamp } from '@/lib/time/timezone';
 
 export interface MiniDistributionProps {
   dist: ColumnDistribution;
+  /** Column type + timezone so date labels display in the chosen zone. */
+  columnType?: ColumnType;
+  tz?: string;
 }
 
 /** Compact per-column distribution: histogram (numeric) or top-value bar. */
-export function MiniDistribution({ dist }: MiniDistributionProps) {
+export function MiniDistribution({ dist, columnType, tz }: MiniDistributionProps) {
+  const display = (value: string) =>
+    columnType === 'date' && tz ? formatTimestamp(value, tz) : value;
+
   if (dist.kind === 'empty') {
     return <span className="text-xs text-slate-300 dark:text-slate-600">—</span>;
   }
@@ -33,7 +41,7 @@ export function MiniDistribution({ dist }: MiniDistributionProps) {
 
   const { top, othersCount, total } = dist;
   const title =
-    top.map((t) => `${t.value}: ${formatNumber(t.count)}`).join('\n') +
+    top.map((t) => `${display(t.value)}: ${formatNumber(t.count)}`).join('\n') +
     (othersCount > 0 ? `\nothers: ${formatNumber(othersCount)}` : '');
 
   return (
@@ -56,7 +64,7 @@ export function MiniDistribution({ dist }: MiniDistributionProps) {
         )}
       </div>
       <div className="mt-1 truncate text-[11px] text-slate-500 dark:text-slate-400">
-        {top[0].value} · {formatNumber(top[0].count)}
+        {display(top[0].value)} · {formatNumber(top[0].count)}
       </div>
     </div>
   );
