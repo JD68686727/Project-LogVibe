@@ -17,6 +17,8 @@ export interface WorkspaceBarProps {
   onCustomLog?: () => void;
   /** Opens the config hardening audit. */
   onAuditConfig?: () => void;
+  /** Starts live-tailing a file (only when the File System Access API exists). */
+  onTailFile?: () => void;
 }
 
 const MODES: { value: WorkspaceMode; label: string }[] = [
@@ -36,6 +38,7 @@ export function WorkspaceBar({
   onAddFile,
   onCustomLog,
   onAuditConfig,
+  onTailFile,
 }: WorkspaceBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -136,6 +139,16 @@ export function WorkspaceBar({
             className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-500 hover:border-brand-400 hover:text-brand-600 dark:border-slate-600 dark:text-slate-400 dark:hover:text-brand-400"
           >
             + Audit config
+          </button>
+        )}
+
+        {onTailFile && (
+          <button
+            type="button"
+            onClick={onTailFile}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-500 hover:border-brand-400 hover:text-brand-600 dark:border-slate-600 dark:text-slate-400 dark:hover:text-brand-400"
+          >
+            + Tail file (live)
           </button>
         )}
       </div>

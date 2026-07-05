@@ -7,6 +7,8 @@ import { ParseStatus } from '@/features/ingestion/components/ParseStatus';
 import { LogPatternBuilder } from '@/features/ingestion/components/LogPatternBuilder';
 import { ConfigAuditModal } from '@/features/config/components/ConfigAuditModal';
 import { SAMPLES, sampleToFile } from '@/features/ingestion/sampleData';
+import { useTailFile } from '@/features/ingestion/hooks/useTailFile';
+import { TailControls } from '@/features/ingestion/components/TailControls';
 import { KeyboardShortcuts } from '@/features/help/components/KeyboardShortcuts';
 import { useWorkspace } from '@/features/workspace/hooks/useWorkspace';
 import { WorkspaceBar } from '@/features/workspace/components/WorkspaceBar';
@@ -37,6 +39,10 @@ export function App() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const lastAddedRef = useRef<Dataset | null>(null);
   const { addDataset } = ws;
+  const tail = useTailFile({
+    addDataset: ws.addDataset,
+    updateDataset: ws.updateDataset,
+  });
 
   // A derived dataset (custom-log parse, security-scan findings, config audit)
   // bypasses the CSV parser and is added to the workspace directly.
@@ -151,6 +157,18 @@ export function App() {
                 Audit it for hardening issues
               </button>
             </p>
+            {tail.supported && (
+              <p className="mt-1 text-center text-sm text-slate-500 dark:text-slate-400">
+                Watching a log that keeps growing?{' '}
+                <button
+                  type="button"
+                  onClick={() => void tail.start()}
+                  className="font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+                >
+                  Tail it live
+                </button>
+              </p>
+            )}
 
             <div className="mx-auto mt-8 max-w-2xl">
               <p className="text-center text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
@@ -189,7 +207,28 @@ export function App() {
               onAddFile={parseFile}
               onCustomLog={() => setShowBuilder(true)}
               onAuditConfig={() => setShowAudit(true)}
+              onTailFile={tail.supported ? () => void tail.start() : undefined}
             />
+
+            {tail.active && ws.activeFile && tail.fileId === ws.activeFile.id && (
+              <TailControls
+                fileName={tail.fileName ?? ws.activeFile.dataset.meta.fileName}
+                paused={tail.paused}
+                atCap={tail.atCap}
+                onPause={tail.pause}
+                onResume={tail.resume}
+                onStop={tail.stop}
+              />
+            )}
+
+            {tail.error && (
+              <p
+                role="alert"
+                className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300"
+              >
+                {tail.error}
+              </p>
+            )}
 
             {status === 'error' && (
               <ParseStatus
@@ -211,6 +250,7 @@ export function App() {
                 }
                 onOpenDataset={openDerivedDataset}
                 timeZone={tz}
+                autoScroll={tail.active && tail.fileId === ws.activeFile.id}
               />
             )}
 
