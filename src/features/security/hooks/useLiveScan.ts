@@ -18,8 +18,11 @@ const DEBOUNCE_MS = 1500;
 export function useLiveScan(
   dataset: Dataset | null,
   active: boolean,
-): { count: number; scanning: boolean } {
-  const [state, setState] = useState({ count: 0, scanning: false });
+): { findings: Finding[]; count: number; scanning: boolean } {
+  const [state, setState] = useState<{ findings: Finding[]; scanning: boolean }>({
+    findings: [],
+    scanning: false,
+  });
   const clientRef = useRef<WorkerClient<ScanRequest, Finding[]> | null>(null);
 
   // One worker for the whole tailing session.
@@ -43,7 +46,7 @@ export function useLiveScan(
   // Debounced re-scan whenever the dataset grows.
   useEffect(() => {
     if (!active || !dataset) {
-      setState({ count: 0, scanning: false });
+      setState({ findings: [], scanning: false });
       return;
     }
     const timer = setTimeout(async () => {
@@ -54,13 +57,13 @@ export function useLiveScan(
         const findings = client
           ? await client.run({ dataset, order })
           : runProfiles(dataset, order);
-        setState({ count: findings.length, scanning: false });
+        setState({ findings, scanning: false });
       } catch {
-        setState({ count: runProfiles(dataset, order).length, scanning: false });
+        setState({ findings: runProfiles(dataset, order), scanning: false });
       }
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [dataset, active]);
 
-  return state;
+  return { findings: state.findings, count: state.findings.length, scanning: state.scanning };
 }

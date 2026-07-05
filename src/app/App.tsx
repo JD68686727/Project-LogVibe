@@ -10,6 +10,8 @@ import { SAMPLES, sampleToFile } from '@/features/ingestion/sampleData';
 import { useTailFile } from '@/features/ingestion/hooks/useTailFile';
 import { TailControls } from '@/features/ingestion/components/TailControls';
 import { useLiveScan } from '@/features/security/hooks/useLiveScan';
+import { useFindingAlerts } from '@/features/security/hooks/useFindingAlerts';
+import { requestNotifyPermission } from '@/lib/alert/notify';
 import { KeyboardShortcuts } from '@/features/help/components/KeyboardShortcuts';
 import { useWorkspace } from '@/features/workspace/hooks/useWorkspace';
 import { WorkspaceBar } from '@/features/workspace/components/WorkspaceBar';
@@ -50,6 +52,24 @@ export function App() {
       ? ws.activeFile.dataset
       : null;
   const liveScan = useLiveScan(tailedDataset, tail.active);
+  const [alertsOn, setAlertsOn] = useState(() => {
+    try {
+      return localStorage.getItem('logvibe.alerts') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const toggleAlerts = async () => {
+    const next = !alertsOn;
+    if (next) await requestNotifyPermission();
+    try {
+      localStorage.setItem('logvibe.alerts', next ? '1' : '0');
+    } catch {
+      // storage unavailable — keep the in-memory preference
+    }
+    setAlertsOn(next);
+  };
+  useFindingAlerts(liveScan.findings, { enabled: alertsOn && tail.active });
 
   // A derived dataset (custom-log parse, security-scan findings, config audit)
   // bypasses the CSV parser and is added to the workspace directly.
@@ -223,6 +243,8 @@ export function App() {
                 paused={tail.paused}
                 atCap={tail.atCap}
                 findingCount={liveScan.count}
+                alertsOn={alertsOn}
+                onToggleAlerts={() => void toggleAlerts()}
                 onPause={tail.pause}
                 onResume={tail.resume}
                 onStop={tail.stop}

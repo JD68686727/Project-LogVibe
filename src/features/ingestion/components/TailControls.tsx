@@ -9,6 +9,10 @@ export interface TailControlsProps {
   atCap: boolean;
   /** Live threat-scan finding count (0 hides the badge). */
   findingCount?: number;
+  /** Whether desktop alerts on new high-severity findings are enabled. */
+  alertsOn?: boolean;
+  /** Toggles alerts (undefined hides the bell). */
+  onToggleAlerts?: () => void;
   onPause: () => void;
   onResume: () => void;
   onStop: () => void;
@@ -20,6 +24,8 @@ export function TailControls({
   paused,
   atCap,
   findingCount = 0,
+  alertsOn = false,
+  onToggleAlerts,
   onPause,
   onResume,
   onStop,
@@ -52,6 +58,21 @@ export function TailControls({
         </span>
       )}
       <div className="ml-auto flex items-center gap-2">
+        {onToggleAlerts && (
+          <button
+            type="button"
+            onClick={onToggleAlerts}
+            aria-pressed={alertsOn}
+            aria-label="Alert on high-severity findings"
+            title="Desktop alert on new high-severity findings"
+            className={cn(
+              btn,
+              alertsOn && 'bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:text-white',
+            )}
+          >
+            {alertsOn ? '🔔 Alerts on' : '🔕 Alert me'}
+          </button>
+        )}
         {paused ? (
           <button type="button" onClick={onResume} className={btn}>
             Resume
