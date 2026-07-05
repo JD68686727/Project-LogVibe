@@ -291,6 +291,14 @@ export function App() {
         <LogPatternBuilder
           onDataset={handleCustomDataset}
           onClose={() => setShowBuilder(false)}
+          onTailFile={
+            tail.supported
+              ? (pattern) => {
+                  setShowBuilder(false);
+                  void tail.start(pattern);
+                }
+              : undefined
+          }
         />
       )}
 
