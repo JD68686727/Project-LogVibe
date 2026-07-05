@@ -7,6 +7,8 @@ export interface TailControlsProps {
   fileName: string;
   paused: boolean;
   atCap: boolean;
+  /** Live threat-scan finding count (0 hides the badge). */
+  findingCount?: number;
   onPause: () => void;
   onResume: () => void;
   onStop: () => void;
@@ -17,6 +19,7 @@ export function TailControls({
   fileName,
   paused,
   atCap,
+  findingCount = 0,
   onPause,
   onResume,
   onStop,
@@ -35,6 +38,14 @@ export function TailControls({
       <span className="text-emerald-700/80 dark:text-emerald-300/80">
         tailing <span className="font-mono">{fileName}</span>
       </span>
+      {findingCount > 0 && (
+        <span
+          className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700 dark:bg-rose-500/20 dark:text-rose-300"
+          title="Open Security scan for details"
+        >
+          ⚠ {findingCount} finding{findingCount === 1 ? '' : 's'}
+        </span>
+      )}
       {atCap && (
         <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">
           row cap reached — no longer appending

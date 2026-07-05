@@ -9,6 +9,7 @@ import { ConfigAuditModal } from '@/features/config/components/ConfigAuditModal'
 import { SAMPLES, sampleToFile } from '@/features/ingestion/sampleData';
 import { useTailFile } from '@/features/ingestion/hooks/useTailFile';
 import { TailControls } from '@/features/ingestion/components/TailControls';
+import { useLiveScan } from '@/features/security/hooks/useLiveScan';
 import { KeyboardShortcuts } from '@/features/help/components/KeyboardShortcuts';
 import { useWorkspace } from '@/features/workspace/hooks/useWorkspace';
 import { WorkspaceBar } from '@/features/workspace/components/WorkspaceBar';
@@ -43,6 +44,12 @@ export function App() {
     addDataset: ws.addDataset,
     updateDataset: ws.updateDataset,
   });
+  // Auto-scan the growing tailed file so threat findings update live.
+  const tailedDataset =
+    tail.active && ws.activeFile && tail.fileId === ws.activeFile.id
+      ? ws.activeFile.dataset
+      : null;
+  const liveScan = useLiveScan(tailedDataset, tail.active);
 
   // A derived dataset (custom-log parse, security-scan findings, config audit)
   // bypasses the CSV parser and is added to the workspace directly.
@@ -215,6 +222,7 @@ export function App() {
                 fileName={tail.fileName ?? ws.activeFile.dataset.meta.fileName}
                 paused={tail.paused}
                 atCap={tail.atCap}
+                findingCount={liveScan.count}
                 onPause={tail.pause}
                 onResume={tail.resume}
                 onStop={tail.stop}
