@@ -1,11 +1,39 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Papa from 'papaparse';
 import type { Dataset } from '@/types/dataset';
+import type { LogPattern } from '@/types/logPattern';
 import { assembleDataset } from '@/lib/csv/assembleDataset';
 import { decodeBytes, readFileSmart, type Encoding } from '@/lib/csv/encoding';
 import { splitAppended } from '@/lib/csv/splitAppended';
 import { readAppended, type FileLike, type TailReadState } from '@/lib/csv/tailReader';
 import { appendRows, MAX_ROWS } from '@/lib/csv/appendRows';
+import { compilePattern, parseLine } from '@/lib/log/regexParser';
+
+interface CompiledPattern {
+  re: RegExp;
+  fields: string[];
+}
+
+/** Parses complete lines to raw rows — CSV via PapaParse, or a named-group
+ *  regex for custom logs (non-matching lines are skipped). */
+function parseLines(
+  lines: string[],
+  delimiter: string,
+  pattern: CompiledPattern | null,
+): string[][] {
+  if (pattern) {
+    const out: string[][] = [];
+    for (const line of lines) {
+      const row = parseLine(pattern.re, pattern.fields, line);
+      if (row) out.push(row);
+    }
+    return out;
+  }
+  return Papa.parse<string[]>(lines.join('\n'), {
+    delimiter,
+    skipEmptyLines: 'greedy',
+  }).data as string[][];
+}
 
 const POLL_MS = 1000;
 
@@ -26,7 +54,8 @@ export interface TailStatus {
 }
 
 export interface UseTailFile extends TailStatus {
-  start: () => Promise<void>;
+  /** Starts tailing; pass a LogPattern to parse a custom log instead of CSV. */
+  start: (pattern?: LogPattern) => Promise<void>;
   pause: () => void;
   resume: () => void;
   stop: () => void;
@@ -61,58 +90,82 @@ export function useTailFile({ addDataset, updateDataset }: UseTailFileDeps): Use
   const fileIdRef = useRef<string | null>(null);
   const delimiterRef = useRef(',');
   const encodingRef = useRef<Encoding>('utf-8');
+  const patternRef = useRef<CompiledPattern | null>(null);
   const rowCountRef = useRef(0);
   const atCapRef = useRef(false);
 
-  const start = useCallback(async () => {
-    const picker = getPicker();
-    if (!picker) return;
-    let handle: FileLike;
-    try {
-      [handle] = await picker({ multiple: false });
-    } catch {
-      return; // user cancelled the picker
-    }
+  const start = useCallback(
+    async (pattern?: LogPattern) => {
+      const picker = getPicker();
+      if (!picker) return;
+      let handle: FileLike;
+      try {
+        [handle] = await picker({ multiple: false });
+      } catch {
+        return; // user cancelled the picker
+      }
 
-    const file = await handle.getFile();
-    const { text, encoding } = await readFileSmart(file);
-    // Hold back a partial trailing line so appends continue it cleanly.
-    const { lines, remainder } = splitAppended('', text);
-    const result = Papa.parse<string[]>(lines.join('\n'), {
-      skipEmptyLines: 'greedy',
-    });
-    const rows = result.data as string[][];
-    const headers = rows[0] ?? [];
-    const body = rows.slice(1, MAX_ROWS + 1);
-    const delimiter = result.meta.delimiter || ',';
+      const file = await handle.getFile();
+      const { text, encoding } = await readFileSmart(file);
+      // Hold back a partial trailing line so appends continue it cleanly.
+      const { lines, remainder } = splitAppended('', text);
 
-    const dataset = assembleDataset(headers, body, {
-      fileName: file.name,
-      fileSize: file.size,
-      delimiter,
-      truncated: rows.length - 1 > MAX_ROWS,
-      encoding,
-    });
-    const id = addDataset(dataset);
+      let dataset: Dataset;
+      let delimiter = '';
+      let compiled: CompiledPattern | null = null;
 
-    handleRef.current = handle;
-    readStateRef.current = { offset: file.size, remainder };
-    fileIdRef.current = id;
-    delimiterRef.current = delimiter;
-    encodingRef.current = encoding;
-    rowCountRef.current = dataset.rows.length;
-    atCapRef.current = false;
+      if (pattern) {
+        const res = compilePattern(pattern);
+        if (!res.ok) return; // the builder validated it, so this is defensive
+        compiled = { re: res.re, fields: res.fields };
+        const rows = parseLines(lines, '', compiled).slice(0, MAX_ROWS);
+        dataset = assembleDataset(compiled.fields, rows, {
+          fileName: file.name,
+          fileSize: file.size,
+          delimiter: '',
+          truncated: false,
+          encoding,
+        });
+      } else {
+        const result = Papa.parse<string[]>(lines.join('\n'), {
+          skipEmptyLines: 'greedy',
+        });
+        const parsed = result.data as string[][];
+        const headers = parsed[0] ?? [];
+        const body = parsed.slice(1, MAX_ROWS + 1);
+        delimiter = result.meta.delimiter || ',';
+        dataset = assembleDataset(headers, body, {
+          fileName: file.name,
+          fileSize: file.size,
+          delimiter,
+          truncated: parsed.length - 1 > MAX_ROWS,
+          encoding,
+        });
+      }
 
-    setStatus({
-      supported: true,
-      active: true,
-      paused: false,
-      fileName: file.name,
-      fileId: id,
-      atCap: false,
-      error: null,
-    });
-  }, [addDataset]);
+      const id = addDataset(dataset);
+
+      handleRef.current = handle;
+      readStateRef.current = { offset: file.size, remainder };
+      fileIdRef.current = id;
+      delimiterRef.current = delimiter;
+      encodingRef.current = encoding;
+      patternRef.current = compiled;
+      rowCountRef.current = dataset.rows.length;
+      atCapRef.current = false;
+
+      setStatus({
+        supported: true,
+        active: true,
+        paused: false,
+        fileName: file.name,
+        fileId: id,
+        atCap: false,
+        error: null,
+      });
+    },
+    [addDataset],
+  );
 
   const pause = useCallback(() => setStatus((s) => ({ ...s, paused: true })), []);
   const resume = useCallback(() => setStatus((s) => ({ ...s, paused: false })), []);
@@ -140,10 +193,7 @@ export function useTailFile({ addDataset, updateDataset }: UseTailFileDeps): Use
         readStateRef.current = state;
         if (cancelled || lines.length === 0) return;
 
-        const parsed = Papa.parse<string[]>(lines.join('\n'), {
-          delimiter: delimiterRef.current,
-          skipEmptyLines: 'greedy',
-        }).data as string[][];
+        const parsed = parseLines(lines, delimiterRef.current, patternRef.current);
         if (parsed.length === 0) return;
 
         const room = MAX_ROWS - rowCountRef.current;

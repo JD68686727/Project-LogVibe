@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Dataset } from '@/types/dataset';
-import type { SavedLogPattern } from '@/types/logPattern';
+import type { LogPattern, SavedLogPattern } from '@/types/logPattern';
 import { cn } from '@/utils/cn';
 import { btnSecondary, inputCls } from '@/utils/controls';
 import { seriesColor } from '@/utils/chartColors';
@@ -68,10 +68,17 @@ const section = 'text-xs font-semibold uppercase tracking-wide text-slate-400 da
 export interface LogPatternBuilderProps {
   onDataset: (dataset: Dataset) => void;
   onClose: () => void;
+  /** When set (File System Access API present), offers "Tail live" with the
+   *  current pattern instead of a one-shot parse. */
+  onTailFile?: (pattern: LogPattern) => void;
 }
 
 /** Modal to map an unstructured log into the dataset schema via a named-group regex. */
-export function LogPatternBuilder({ onDataset, onClose }: LogPatternBuilderProps) {
+export function LogPatternBuilder({
+  onDataset,
+  onClose,
+  onTailFile,
+}: LogPatternBuilderProps) {
   const [sample, setSample] = useState(TEMPLATES[0].sample);
   const [regex, setRegex] = useState(TEMPLATES[0].regex);
   const [flags, setFlags] = useState(TEMPLATES[0].flags);
@@ -430,6 +437,20 @@ export function LogPatternBuilder({ onDataset, onClose }: LogPatternBuilderProps
             <button type="button" onClick={onClose} className={btnSecondary}>
               Cancel
             </button>
+            {onTailFile && (
+              <button
+                type="button"
+                disabled={!compiled.ok}
+                onClick={() => {
+                  if (compiled.ok) onTailFile({ regex, flags });
+                  onClose();
+                }}
+                className={cn(btnSecondary, 'disabled:cursor-not-allowed disabled:opacity-40')}
+                title="Pick a file and stream new lines with this pattern"
+              >
+                Tail live
+              </button>
+            )}
             <button
               type="button"
               disabled={!canParse}
