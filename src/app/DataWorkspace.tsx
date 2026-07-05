@@ -47,6 +47,8 @@ export interface DataWorkspaceProps {
   onOpenDataset?: (dataset: Dataset) => void;
   /** Display timezone for date columns + chart buckets (default UTC). */
   timeZone?: string;
+  /** Pin the table to the newest rows (live tailing of this file). */
+  autoScroll?: boolean;
 }
 
 /**
@@ -63,6 +65,7 @@ export function DataWorkspace({
   onRetypeColumn,
   onOpenDataset,
   timeZone = DEFAULT_TZ,
+  autoScroll,
 }: DataWorkspaceProps) {
   const filtersApi = useFilters(dataset);
   const chart = useChartConfig(dataset, filtersApi.filteredOrder, timeZone);
@@ -274,6 +277,7 @@ export function DataWorkspace({
         onSelectRow={setSelectedRowIdx}
         selectedRowIdx={selectedRowIdx}
         timeZone={timeZone}
+        autoScroll={autoScroll}
       />
 
       {selectedRowIdx !== null && (

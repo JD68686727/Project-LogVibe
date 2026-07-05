@@ -10,7 +10,10 @@ const nextId = () => `file-${Date.now()}-${++idCounter}`;
 export interface UseWorkspace {
   files: LoadedFile[];
   activeFile: LoadedFile | null;
-  addDataset: (dataset: Dataset) => void;
+  /** Adds a file and returns its new id (used by live tailing to update it). */
+  addDataset: (dataset: Dataset) => string;
+  /** Replaces a file's dataset via an updater (live tailing appends rows). */
+  updateDataset: (fileId: string, updater: (prev: Dataset) => Dataset) => void;
   removeFile: (id: string) => void;
   setActive: (id: string) => void;
   /** Override a column's inferred type; re-coerces cells and remembers it. */
@@ -29,7 +32,19 @@ export function useWorkspace(): UseWorkspace {
     const file: LoadedFile = { id: nextId(), dataset: ds };
     setFiles((prev) => [...prev, file]);
     setActiveId(file.id); // a newly loaded file becomes active
+    return file.id;
   }, []);
+
+  const updateDataset = useCallback(
+    (fileId: string, updater: (prev: Dataset) => Dataset) => {
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileId ? { ...f, dataset: updater(f.dataset) } : f,
+        ),
+      );
+    },
+    [],
+  );
 
   const removeFile = useCallback((id: string) => {
     setFiles((prev) => prev.filter((f) => f.id !== id));
@@ -55,5 +70,13 @@ export function useWorkspace(): UseWorkspace {
   const activeFile =
     files.find((f) => f.id === activeId) ?? files[files.length - 1] ?? null;
 
-  return { files, activeFile, addDataset, removeFile, setActive, setColumnType };
+  return {
+    files,
+    activeFile,
+    addDataset,
+    updateDataset,
+    removeFile,
+    setActive,
+    setColumnType,
+  };
 }

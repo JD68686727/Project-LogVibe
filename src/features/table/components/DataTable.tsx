@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ColumnSchema, Dataset } from '@/types/dataset';
 import type { SortDirection, SortKey } from '@/types/table';
@@ -24,6 +24,8 @@ export interface DataTableProps {
   selectedRowIdx?: number | null;
   /** Display timezone applied to date columns. */
   timeZone?: string;
+  /** Keep the view pinned to the newest rows as they append (live tailing). */
+  autoScroll?: boolean;
 }
 
 function SortIcon({
@@ -61,8 +63,22 @@ export function DataTable({
   onSelectRow,
   selectedRowIdx,
   timeZone,
+  autoScroll,
 }: DataTableProps) {
   const parentRef = useRef<HTMLDivElement>(null);
+  // Stay pinned to the bottom only while the user is already there.
+  const stickToBottom = useRef(true);
+
+  const onScroll = () => {
+    const el = parentRef.current;
+    if (el) stickToBottom.current = el.scrollTop + el.clientHeight >= el.scrollHeight - 24;
+  };
+
+  useEffect(() => {
+    if (!autoScroll) return;
+    const el = parentRef.current;
+    if (el && stickToBottom.current) el.scrollTop = el.scrollHeight;
+  }, [order.length, autoScroll]);
 
   const virtualizer = useVirtualizer({
     count: order.length,
@@ -77,6 +93,7 @@ export function DataTable({
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div
         ref={parentRef}
+        onScroll={onScroll}
         role="region"
         aria-label="Data table"
         className="relative max-h-[70vh] overflow-auto"
