@@ -77,3 +77,31 @@ test('live tail: a custom log (syslog) via the pattern builder', async ({ page }
   });
   await expect(page.getByText('3 of 3 rows')).toBeVisible({ timeout: 5000 });
 });
+
+test('live tail: auto-scan surfaces threat findings as the log grows', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as {
+      __tailContent: string;
+      showOpenFilePicker: () => Promise<{ getFile(): Promise<File> }[]>;
+    };
+    // One row carrying a SQLi payload → the payload-injection detector fires.
+    w.__tailContent =
+      'timestamp,method,url,status,client_ip\n' +
+      "2026-01-01T03:00:00Z,GET,/search?q=' OR 1=1 --,200,203.0.113.9\n";
+    w.showOpenFilePicker = async () => [
+      {
+        getFile: async () =>
+          new File([w.__tailContent], 'waf.csv', { type: 'text/csv' }),
+      },
+    ];
+  });
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Tail it live' }).click();
+  await expect(page.getByText('1 of 1 rows')).toBeVisible();
+
+  // The live auto-scan (debounced, off the main thread) flags the payload.
+  await expect(page.getByText(/finding/)).toBeVisible({ timeout: 6000 });
+});
