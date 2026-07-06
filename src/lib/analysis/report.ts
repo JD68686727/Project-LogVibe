@@ -1,4 +1,4 @@
-import { sortFindings, type Finding, type Severity } from './findings';
+import { sortFindings, riskScore, type Finding, type Severity } from './findings';
 
 export interface ReportMeta {
   /** Source file the findings came from. */
@@ -74,7 +74,9 @@ export function findingsToMarkdown(
     lines.push(`### ${label(ruleId)}${technique ? ` — ${technique}` : ''}`);
     lines.push('');
     for (const f of group) {
-      lines.push(`- **[${f.severity}]** \`${redact(f.entity)}\` — ${redact(f.detail)}`);
+      lines.push(
+        `- **[${f.severity}]** \`${redact(f.entity)}\` — ${redact(f.detail)} _(risk ${riskScore(f)})_`,
+      );
     }
     lines.push('');
   }
