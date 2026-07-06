@@ -5,6 +5,7 @@ import { test, expect } from '@playwright/test';
 const AUTH = path.join(process.cwd(), 'samples', 'auth-events.csv');
 const WEBATTACK = path.join(process.cwd(), 'samples', 'web-attack.csv');
 const WAF = path.join(process.cwd(), 'samples', 'waf-log.csv');
+const SCANNERLOG = path.join(process.cwd(), 'samples', 'scanner-log.csv');
 
 test('security scan: brute-force is flagged and opens as a dataset', async ({
   page,
@@ -58,6 +59,21 @@ test('security scan: injection payloads in URLs are flagged', async ({ page }) =
     modal.getByText('T1190 · Exploit Public-Facing Application').first(),
   ).toBeVisible();
   await expect(modal.getByText('203.0.113.9').first()).toBeVisible();
+});
+
+test('security scan: scanner UA + Log4Shell/SSRF payloads are flagged', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.setInputFiles('input[type="file"]', SCANNERLOG);
+  await expect(page.getByText('3 of 3 rows')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Security scan' }).click();
+  const modal = page.getByTestId('security-scan');
+
+  await expect(modal.getByText('scanner-tool')).toBeVisible();
+  await expect(modal.getByText('payload-injection').first()).toBeVisible();
+  await expect(modal.getByText('45.9.1.7').first()).toBeVisible();
 });
 
 test('security scan: download a Markdown report, plain and redacted', async ({

