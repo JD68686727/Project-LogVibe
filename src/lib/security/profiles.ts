@@ -5,6 +5,7 @@ import { httpErrorBurst } from './detectors/httpErrorBurst';
 import { endpointEnum } from './detectors/endpointEnum';
 import { offHours } from './detectors/offHours';
 import { payloadSignatures } from './detectors/payloadSignatures';
+import { scannerUa } from './detectors/scannerUa';
 
 /**
  * A one-click defensive analysis. Each profile runs a detector over the current
@@ -46,8 +47,14 @@ export const SECURITY_PROFILES: SecurityProfile[] = [
   {
     id: 'payload-injection',
     label: 'Injection payloads',
-    hint: 'SQLi / XSS / path-traversal signatures in URLs & fields',
+    hint: 'SQLi / XSS / traversal / cmd-injection / SSRF / Log4Shell in URLs & fields',
     detect: (d, o) => payloadSignatures(d, o),
+  },
+  {
+    id: 'scanner-tool',
+    label: 'Scanner tool fingerprints',
+    hint: 'Known scanner user-agents (sqlmap / nikto / nmap …)',
+    detect: (d, o) => scannerUa(d, o),
   },
 ];
 

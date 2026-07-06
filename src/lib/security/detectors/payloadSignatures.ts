@@ -26,6 +26,23 @@ const SIGNATURES: { type: string; label: string; re: RegExp }[] = [
     label: 'Path traversal',
     re: /\.\.[/\\]|%2e%2e[/\\%]|\/etc\/passwd\b|\bboot\.ini\b/i,
   },
+  {
+    type: 'cmdi',
+    label: 'Command injection',
+    // A shell separator followed by a common command (keeps it high-signal).
+    re: /(?:;|\||&&)\s*(?:cat|ls|id|whoami|uname|wget|curl|nc|bash|sh|ping)\b|\$\(\s*(?:cat|ls|id|whoami|uname|wget|curl|nc|bash|sh|ping)\b/i,
+  },
+  {
+    type: 'ssrf',
+    label: 'SSRF',
+    // Cloud metadata endpoint or an unusual internal-fetch scheme.
+    re: /\b169\.254\.169\.254\b|\b(?:file|gopher|dict):\/\//i,
+  },
+  {
+    type: 'log4shell',
+    label: 'Log4Shell (JNDI)',
+    re: /\$\{jndi:/i,
+  },
 ];
 
 function truncate(s: string, n = 60): string {
