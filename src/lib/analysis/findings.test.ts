@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sortFindings, findingsToDataset, type Finding } from './findings';
+import { sortFindings, findingsToDataset, riskScore, type Finding } from './findings';
 
 const F = (severity: Finding['severity'], entity: string, count = 1): Finding => ({
   severity,
@@ -9,8 +9,17 @@ const F = (severity: Finding['severity'], entity: string, count = 1): Finding =>
   count,
 });
 
+describe('riskScore', () => {
+  it('weights by severity and scales (log10) with count', () => {
+    expect(riskScore(F('critical', 'x'))).toBe(40); // 40 × (1 + log10(1))
+    expect(riskScore(F('high', 'x', 10))).toBe(40); // 20 × (1 + 1)
+    // A high-volume high out-scores a single critical.
+    expect(riskScore(F('high', 'x', 100))).toBeGreaterThan(riskScore(F('critical', 'y')));
+  });
+});
+
 describe('sortFindings', () => {
-  it('orders by severity, then count desc', () => {
+  it('orders by risk (severity × volume), most urgent first', () => {
     const out = sortFindings([
       F('low', 'a'),
       F('critical', 'b'),
@@ -30,17 +39,19 @@ describe('findingsToDataset', () => {
       'entity',
       'detail',
       'count',
+      'risk',
     ]);
     expect(ds.meta.fileName).toBe('scan.csv');
-    // count column infers as number; first row is the critical finding.
+    // count/risk columns infer as number; first row is the critical finding.
     expect(ds.rows[0][ds.columnIndex.severity]).toBe('critical');
     expect(ds.rows[0][ds.columnIndex.count]).toBe(1);
+    expect(ds.rows[0][ds.columnIndex.risk]).toBe(40);
   });
 
   it('produces an empty dataset for no findings', () => {
     const ds = findingsToDataset([], 'scan.csv');
     expect(ds.rows).toHaveLength(0);
-    expect(ds.columns).toHaveLength(5);
+    expect(ds.columns).toHaveLength(6);
   });
 
   it('adds a technique column only when a finding carries one', () => {

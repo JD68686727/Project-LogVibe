@@ -30,13 +30,29 @@ export const SEVERITY_RANK: Record<Severity, number> = {
   low: 3,
 };
 
-/** Most severe first, then most frequent, then by entity for stability. */
+/** Per-severity base weight for the blended risk score. */
+export const SEVERITY_WEIGHT: Record<Severity, number> = {
+  critical: 40,
+  high: 20,
+  medium: 8,
+  low: 2,
+};
+
+/**
+ * A blended urgency score = severity weight scaled (log10) by how many events
+ * back the finding. So a high-volume `high` can out-prioritize a single
+ * `critical` — the point of risk ranking over pure severity. Integer for display.
+ */
+export function riskScore(f: Finding): number {
+  return Math.round(
+    SEVERITY_WEIGHT[f.severity] * (1 + Math.log10(Math.max(1, f.count))),
+  );
+}
+
+/** Most urgent first (by risk score), then by entity for stability. */
 export function sortFindings(findings: Finding[]): Finding[] {
   return [...findings].sort(
-    (a, b) =>
-      SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] ||
-      b.count - a.count ||
-      a.entity.localeCompare(b.entity),
+    (a, b) => riskScore(b) - riskScore(a) || a.entity.localeCompare(b.entity),
   );
 }
 
@@ -50,12 +66,12 @@ export function findingsToDataset(findings: Finding[], fileName: string): Datase
   // (and anything else) that never set one, keeping the schema tidy.
   const withTechnique = findings.some((f) => f.technique);
   const headers = withTechnique
-    ? ['severity', 'rule', 'technique', 'entity', 'detail', 'count']
-    : ['severity', 'rule', 'entity', 'detail', 'count'];
+    ? ['severity', 'rule', 'technique', 'entity', 'detail', 'count', 'risk']
+    : ['severity', 'rule', 'entity', 'detail', 'count', 'risk'];
   const rows = sortFindings(findings).map((f) => {
     const base = [f.severity, f.rule];
     if (withTechnique) base.push(f.technique ?? '');
-    base.push(f.entity, f.detail, String(f.count));
+    base.push(f.entity, f.detail, String(f.count), String(riskScore(f)));
     return base;
   });
   return assembleDataset(headers, rows, {

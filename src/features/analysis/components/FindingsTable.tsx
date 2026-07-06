@@ -1,7 +1,7 @@
-import { sortFindings, type Finding } from '@/lib/analysis/findings';
+import { sortFindings, riskScore, type Finding } from '@/lib/analysis/findings';
 import { SeverityBadge } from './SeverityBadge';
 
-/** Compact, read-only table of findings, sorted most-severe first. */
+/** Compact, read-only table of findings, most urgent (highest risk) first. */
 export function FindingsTable({
   findings,
   cap = 200,
@@ -22,6 +22,7 @@ export function FindingsTable({
             <th className="px-2 py-1.5">Entity</th>
             <th className="px-2 py-1.5">Detail</th>
             <th className="px-2 py-1.5 text-right">Count</th>
+            <th className="px-2 py-1.5 text-right">Risk</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -46,6 +47,9 @@ export function FindingsTable({
               </td>
               <td className="px-2 py-1 text-right font-mono text-slate-500 dark:text-slate-400">
                 {f.count}
+              </td>
+              <td className="px-2 py-1 text-right font-mono font-semibold text-slate-700 dark:text-slate-200">
+                {riskScore(f)}
               </td>
             </tr>
           ))}
