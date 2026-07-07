@@ -2,6 +2,7 @@ import type { ChartConfig } from './chart';
 import type { ColumnFilter, FilterGroup } from './filter';
 import type { PivotConfig } from './pivot';
 import type { ColumnViewItem } from './table';
+import type { DerivedSpec } from '@/lib/table/deriveColumn';
 
 /**
  * A persisted "view" — a named snapshot of the filter + chart + column
@@ -22,5 +23,7 @@ export interface SavedView {
   columns?: ColumnViewItem[];
   /** Pivot cross-tab config. Optional for back-compat with older saved views. */
   pivot?: PivotConfig;
+  /** Computed-column recipes to recreate. Optional for back-compat. */
+  derived?: DerivedSpec[];
   createdAt: number;
 }

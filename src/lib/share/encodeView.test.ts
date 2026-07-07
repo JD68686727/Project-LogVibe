@@ -61,6 +61,35 @@ describe('encodeView / decodeView', () => {
     ]);
   });
 
+  it('round-trips computed-column recipes (all three kinds)', () => {
+    const v: ViewState = {
+      ...view,
+      derived: [
+        { name: 'status', sourceKey: 'msg', pattern: '(\\d+)' },
+        { kind: 'arithmetic', name: 'p2', left: 'port', op: '*', right: '2' },
+        { kind: 'concat', name: 'who', template: '{ip}:{port}' },
+      ],
+    };
+    expect(decodeView(encodeView(v))?.derived).toEqual(v.derived);
+  });
+
+  it('drops malformed derived specs and leaves an empty list undefined', () => {
+    const bad = {
+      ...view,
+      derived: [
+        { name: 'ok', sourceKey: 'msg', pattern: '(x)' },
+        { name: 'no-source' }, // missing extract fields
+        { kind: 'arithmetic', name: 'bad-op', left: 'a', op: '%', right: 'b' },
+      ],
+    };
+    expect(decodeView(btoaSafe(JSON.stringify(bad)))?.derived).toEqual([
+      { name: 'ok', sourceKey: 'msg', pattern: '(x)' },
+    ]);
+
+    const none = { ...view, derived: [{ name: 'x' }] };
+    expect(decodeView(btoaSafe(JSON.stringify(none)))?.derived).toBeUndefined();
+  });
+
   it('leaves pivot undefined for a legacy token without one', () => {
     const { groups, query, sort, chart, columns } = view;
     const legacy = { groups, query, sort, chart, columns };

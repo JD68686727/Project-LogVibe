@@ -284,6 +284,9 @@ export function App() {
                 onRemoveColumn={(columnKey) =>
                   ws.removeColumn(ws.activeFile!.id, columnKey)
                 }
+                onApplyDerivedSpecs={(specs) =>
+                  ws.applyDerivedSpecs(ws.activeFile!.id, specs)
+                }
                 onOpenDataset={openDerivedDataset}
                 timeZone={tz}
                 autoScroll={tail.active && tail.fileId === ws.activeFile.id}

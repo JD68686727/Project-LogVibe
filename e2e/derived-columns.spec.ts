@@ -86,3 +86,28 @@ test('derived columns: a computed column is remembered across reload', async ({ 
   await expect(page.getByText('15 of 15 rows')).toBeVisible();
   await expect(page.getByRole('button', { name: 'resource', exact: true })).toBeVisible();
 });
+
+test('derived columns: a share link recreates the column in a fresh session', async ({ page }) => {
+  await page.goto('/');
+  await page.setInputFiles('input[type="file"]', CSV);
+  await expect(page.getByText('15 of 15 rows')).toBeVisible();
+
+  await page.getByRole('button', { name: /Columns/ }).click();
+  await page.getByLabel('New column name').fill('resource');
+  await page.getByLabel('Source column').selectOption({ label: 'endpoint' });
+  await page.getByLabel('Extraction regex').fill('^/api/(\\w+)');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await page.getByRole('button', { name: /Columns/ }).click(); // close the menu
+
+  await page.getByRole('button', { name: /Share view/ }).click();
+  const url = page.url();
+  expect(url).toContain('#v=');
+
+  // Simulate a recipient with no remembered specs: clear storage, open the link,
+  // load their own copy of the file — the recipe rides in the URL, not storage.
+  await page.evaluate(() => localStorage.clear());
+  await page.goto(url);
+  await page.setInputFiles('input[type="file"]', CSV);
+  await expect(page.getByText('15 of 15 rows')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'resource', exact: true })).toBeVisible();
+});
