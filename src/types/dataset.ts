@@ -18,6 +18,8 @@ export interface ColumnSchema {
   key: string;
   /** Best-effort inferred type, used for sorting/charting/filter operators. */
   type: ColumnType;
+  /** True for user-added computed columns (regex-extract); enables removal. */
+  derived?: boolean;
 }
 
 /**

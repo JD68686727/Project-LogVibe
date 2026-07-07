@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import type { ColumnType, Dataset } from '@/types/dataset';
 import type { LoadedFile } from '@/types/workspace';
 import { retypeColumn, applyTypeOverrides } from '@/lib/table/retypeColumn';
+import { deriveColumn, dropColumn, type DerivedSpec } from '@/lib/table/deriveColumn';
 import { getColumnOverrides, setColumnOverride } from '@/lib/storage/columnTypeStore';
 
 let idCounter = 0;
@@ -18,6 +19,10 @@ export interface UseWorkspace {
   setActive: (id: string) => void;
   /** Override a column's inferred type; re-coerces cells and remembers it. */
   setColumnType: (fileId: string, columnKey: string, type: ColumnType) => void;
+  /** Append a computed column (regex-extract) to a file's dataset. */
+  addDerivedColumn: (fileId: string, spec: DerivedSpec) => void;
+  /** Remove a column (used to undo a derived column) from a file's dataset. */
+  removeColumn: (fileId: string, columnKey: string) => void;
 }
 
 /** Holds the collection of loaded files and which one is active in Analyze mode. */
@@ -65,6 +70,18 @@ export function useWorkspace(): UseWorkspace {
     [],
   );
 
+  const addDerivedColumn = useCallback(
+    (fileId: string, spec: DerivedSpec) =>
+      updateDataset(fileId, (d) => deriveColumn(d, spec)),
+    [updateDataset],
+  );
+
+  const removeColumn = useCallback(
+    (fileId: string, columnKey: string) =>
+      updateDataset(fileId, (d) => dropColumn(d, columnKey)),
+    [updateDataset],
+  );
+
   // Derive the active file with a fallback so removing the active one (which
   // leaves `activeId` stale) still resolves to a valid file.
   const activeFile =
@@ -78,5 +95,7 @@ export function useWorkspace(): UseWorkspace {
     removeFile,
     setActive,
     setColumnType,
+    addDerivedColumn,
+    removeColumn,
   };
 }

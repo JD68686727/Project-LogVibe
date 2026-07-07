@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ColumnType } from '@/types/dataset';
+import type { DerivedSpec } from '@/lib/table/deriveColumn';
 import { btnSecondary } from '@/utils/controls';
 import type { ColumnManagerItem } from '../hooks/useColumnView';
 
@@ -11,6 +12,10 @@ export interface ColumnManagerProps {
   onReset: () => void;
   /** Override a column's inferred type. */
   onRetype?: (key: string, type: ColumnType) => void;
+  /** Add a computed (regex-extract) column. */
+  onAddDerived?: (spec: DerivedSpec) => void;
+  /** Remove a column (only offered for derived columns). */
+  onRemove?: (key: string) => void;
 }
 
 const COLUMN_TYPES: ColumnType[] = ['string', 'number', 'boolean', 'date'];
@@ -25,9 +30,34 @@ export function ColumnManager({
   onShowAll,
   onReset,
   onRetype,
+  onAddDerived,
+  onRemove,
 }: ColumnManagerProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  // "Add computed column" form state.
+  const [name, setName] = useState('');
+  const [sourceKey, setSourceKey] = useState('');
+  const [pattern, setPattern] = useState('');
+  const [type, setType] = useState<ColumnType>('string');
+  const [error, setError] = useState<string | null>(null);
+
+  const submitDerived = () => {
+    if (!onAddDerived || !name.trim() || !pattern) return;
+    try {
+      new RegExp(pattern); // validate before committing
+    } catch {
+      setError('Invalid regular expression');
+      return;
+    }
+    const src = sourceKey || items[0]?.key;
+    if (!src) return;
+    onAddDerived({ name: name.trim(), sourceKey: src, pattern, type });
+    setName('');
+    setPattern('');
+    setError(null);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -117,9 +147,81 @@ export function ColumnManager({
                 >
                   ↓
                 </button>
+                {item.derived && onRemove && (
+                  <button
+                    type="button"
+                    onClick={() => onRemove(item.key)}
+                    aria-label={`Remove ${item.name}`}
+                    className={`${moveBtnCls} hover:!bg-red-50 hover:!text-red-600 dark:hover:!bg-red-950/40`}
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
             ))}
           </div>
+
+          {onAddDerived && (
+            <div className="mt-1 space-y-1.5 border-t border-slate-100 px-2 pt-2 dark:border-slate-800">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                Add computed column
+              </p>
+              <div className="flex gap-1.5">
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Name"
+                  aria-label="New column name"
+                  className="w-24 rounded border border-slate-200 bg-white px-1.5 py-1 text-xs text-slate-700 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                />
+                <select
+                  value={sourceKey || items[0]?.key || ''}
+                  onChange={(e) => setSourceKey(e.target.value)}
+                  aria-label="Source column"
+                  className="min-w-0 flex-1 rounded border border-slate-200 bg-white px-1 py-1 text-xs text-slate-500 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                >
+                  {items.map((it) => (
+                    <option key={it.key} value={it.key}>
+                      {it.name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={type}
+                  onChange={(e) => setType(e.target.value as ColumnType)}
+                  aria-label="New column type"
+                  className="rounded border border-slate-200 bg-white px-1 py-1 text-xs text-slate-500 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                >
+                  {COLUMN_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-1.5">
+                <input
+                  value={pattern}
+                  onChange={(e) => {
+                    setPattern(e.target.value);
+                    setError(null);
+                  }}
+                  placeholder="Regex with (capture group)"
+                  aria-label="Extraction regex"
+                  className="min-w-0 flex-1 rounded border border-slate-200 bg-white px-1.5 py-1 font-mono text-xs text-slate-700 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                />
+                <button
+                  type="button"
+                  onClick={submitDerived}
+                  disabled={!name.trim() || !pattern}
+                  className={`${btnSecondary} disabled:opacity-40`}
+                >
+                  Add
+                </button>
+              </div>
+              {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
+            </div>
+          )}
 
           <div className="mt-1 flex items-center justify-between border-t border-slate-100 px-2 pt-2 dark:border-slate-800">
             <button

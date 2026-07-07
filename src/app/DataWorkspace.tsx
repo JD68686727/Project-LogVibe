@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import type { ColumnType, Dataset } from '@/types/dataset';
+import type { DerivedSpec } from '@/lib/table/deriveColumn';
 import type { SavedView } from '@/types/view';
 import type { ViewState } from '@/types/share';
 import { useFilters } from '@/features/filtering/hooks/useFilters';
@@ -43,6 +44,10 @@ export interface DataWorkspaceProps {
   onConsumePending: () => void;
   /** Override a column's inferred type on the active file. */
   onRetypeColumn: (columnKey: string, type: ColumnType) => void;
+  /** Add a computed (regex-extract) column to the active file. */
+  onAddDerivedColumn?: (spec: DerivedSpec) => void;
+  /** Remove a (derived) column from the active file. */
+  onRemoveColumn?: (columnKey: string) => void;
   /** Opens a derived dataset (e.g. a security scan's findings) as a new file. */
   onOpenDataset?: (dataset: Dataset) => void;
   /** Display timezone for date columns + chart buckets (default UTC). */
@@ -63,6 +68,8 @@ export function DataWorkspace({
   pending,
   onConsumePending,
   onRetypeColumn,
+  onAddDerivedColumn,
+  onRemoveColumn,
   onOpenDataset,
   timeZone = DEFAULT_TZ,
   autoScroll,
@@ -242,6 +249,8 @@ export function DataWorkspace({
           onShowAll={columnView.showAll}
           onReset={columnView.reset}
           onRetype={onRetypeColumn}
+          onAddDerived={onAddDerivedColumn}
+          onRemove={onRemoveColumn}
         />
         <div className="flex items-center gap-2">
           {onOpenDataset && (
