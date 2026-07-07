@@ -37,7 +37,9 @@ export function ColumnManager({
   const ref = useRef<HTMLDivElement>(null);
 
   // "Add computed column" form state.
-  const [mode, setMode] = useState<'extract' | 'arithmetic'>('extract');
+  const [mode, setMode] = useState<'extract' | 'arithmetic' | 'concat'>(
+    'extract',
+  );
   const [name, setName] = useState('');
   const [sourceKey, setSourceKey] = useState('');
   const [pattern, setPattern] = useState('');
@@ -45,10 +47,16 @@ export function ColumnManager({
   const [left, setLeft] = useState('');
   const [op, setOp] = useState<ArithmeticOp>('/');
   const [right, setRight] = useState('');
+  const [template, setTemplate] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const canSubmit =
-    !!name.trim() && (mode === 'extract' ? !!pattern : !!right.trim());
+    !!name.trim() &&
+    (mode === 'extract'
+      ? !!pattern
+      : mode === 'arithmetic'
+        ? !!right.trim()
+        : !!template.trim());
 
   // A right operand typed as a column name resolves to its key; else it's a
   // numeric literal, passed through as-is.
@@ -68,7 +76,7 @@ export function ColumnManager({
       const src = sourceKey || items[0]?.key;
       if (!src) return;
       onAddDerived({ name: name.trim(), sourceKey: src, pattern, type });
-    } else {
+    } else if (mode === 'arithmetic') {
       if (!right.trim()) return;
       onAddDerived({
         kind: 'arithmetic',
@@ -78,10 +86,14 @@ export function ColumnManager({
         right: resolveOperand(right),
         type: type === 'string' ? 'number' : type,
       });
+    } else {
+      if (!template.trim()) return;
+      onAddDerived({ kind: 'concat', name: name.trim(), template, type });
     }
     setName('');
     setPattern('');
     setRight('');
+    setTemplate('');
     setError(null);
   };
 
@@ -197,7 +209,7 @@ export function ColumnManager({
                 aria-label="Computed column mode"
                 className="inline-flex rounded border border-slate-200 p-0.5 text-xs dark:border-slate-700"
               >
-                {(['extract', 'arithmetic'] as const).map((m) => (
+                {(['extract', 'arithmetic', 'concat'] as const).map((m) => (
                   <button
                     key={m}
                     type="button"
@@ -213,7 +225,7 @@ export function ColumnManager({
                         : 'rounded px-2 py-0.5 text-slate-500 dark:text-slate-400'
                     }
                   >
-                    {m === 'extract' ? 'Regex extract' : 'Math'}
+                    {m === 'extract' ? 'Regex' : m === 'arithmetic' ? 'Math' : 'Text'}
                   </button>
                 ))}
               </div>
@@ -274,7 +286,7 @@ export function ColumnManager({
                     Add
                   </button>
                 </div>
-              ) : (
+              ) : mode === 'arithmetic' ? (
                 <div className="flex gap-1.5">
                   <select
                     value={left || items[0]?.key || ''}
@@ -306,6 +318,24 @@ export function ColumnManager({
                     placeholder="column or number"
                     aria-label="Right operand"
                     className="w-24 rounded border border-slate-200 bg-white px-1.5 py-1 text-xs text-slate-700 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={submitDerived}
+                    disabled={!canSubmit}
+                    className={`${btnSecondary} disabled:opacity-40`}
+                  >
+                    Add
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-1.5">
+                  <input
+                    value={template}
+                    onChange={(e) => setTemplate(e.target.value)}
+                    placeholder="{host}:{port}"
+                    aria-label="Text template"
+                    className="min-w-0 flex-1 rounded border border-slate-200 bg-white px-1.5 py-1 font-mono text-xs text-slate-700 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                   />
                   <button
                     type="button"

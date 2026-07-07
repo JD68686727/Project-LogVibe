@@ -2,12 +2,13 @@ import type { CellValue, ColumnSchema, ColumnType, Dataset } from '@/types/datas
 import { coerceValue } from '@/lib/csv/assembleDataset';
 
 /**
- * A recipe for a computed column. Two kinds share one seam:
+ * A recipe for a computed column. Three kinds share one seam:
  * - `extract` — regex-pull a capture group out of a source column.
  * - `arithmetic` — combine two operands (column or numeric literal) with + - * /.
+ * - `concat` — fill a text template with `{column}` placeholders per row.
  * Pure data so it can be snapshotted/replayed.
  */
-export type DerivedSpec = ExtractSpec | ArithmeticSpec;
+export type DerivedSpec = ExtractSpec | ArithmeticSpec | ConcatSpec;
 
 export interface ExtractSpec {
   /** Discriminator; omitted defaults to 'extract' for back-compat. */
@@ -37,6 +38,15 @@ export interface ArithmeticSpec {
   /** Right operand: a column key or a numeric literal. */
   right: string;
   /** Type to coerce the result to. Defaults to 'number'. */
+  type?: ColumnType;
+}
+
+export interface ConcatSpec {
+  kind: 'concat';
+  name: string;
+  /** Text with `{column}` placeholders (by key or header name). */
+  template: string;
+  /** Type to coerce the filled text to. Defaults to 'string'. */
   type?: ColumnType;
 }
 
@@ -141,12 +151,34 @@ function deriveArithmetic(dataset: Dataset, spec: ArithmeticSpec): Dataset {
 }
 
 /**
+ * Returns a new Dataset with an extra column built by filling a text template:
+ * each `{column}` placeholder (matched by key or header name) is replaced with
+ * the row's cell (null → empty); unknown placeholders are left literal.
+ */
+function deriveConcat(dataset: Dataset, spec: ConcatSpec): Dataset {
+  const byName = new Map(dataset.columns.map((c, i) => [c.name, i]));
+  const type = spec.type ?? 'string';
+  const cells = dataset.rows.map((row) => {
+    const text = spec.template.replace(/\{([^}]+)\}/g, (whole, tok: string) => {
+      const key = tok.trim();
+      const idx = dataset.columnIndex[key] ?? byName.get(key);
+      if (idx == null) return whole; // leave unknown placeholder literal
+      const v = row[idx];
+      return v == null ? '' : String(v);
+    });
+    return coerceValue(text, type);
+  });
+  return appendColumn(dataset, spec.name, type, cells);
+}
+
+/**
  * Returns a new Dataset with an extra computed column. Dispatches on the spec
- * kind (regex extract or arithmetic). Immutable; a no-op when a referenced
- * source column is missing.
+ * kind (regex extract, arithmetic, or concat). Immutable; a no-op when a
+ * referenced source column is missing.
  */
 export function deriveColumn(dataset: Dataset, spec: DerivedSpec): Dataset {
   if (spec.kind === 'arithmetic') return deriveArithmetic(dataset, spec);
+  if (spec.kind === 'concat') return deriveConcat(dataset, spec);
   return deriveExtract(dataset, spec);
 }
 
