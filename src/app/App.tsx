@@ -278,6 +278,12 @@ export function App() {
                 onRetypeColumn={(columnKey, type) =>
                   ws.setColumnType(ws.activeFile!.id, columnKey, type)
                 }
+                onAddDerivedColumn={(spec) =>
+                  ws.addDerivedColumn(ws.activeFile!.id, spec)
+                }
+                onRemoveColumn={(columnKey) =>
+                  ws.removeColumn(ws.activeFile!.id, columnKey)
+                }
                 onOpenDataset={openDerivedDataset}
                 timeZone={tz}
                 autoScroll={tail.active && tail.fileId === ws.activeFile.id}
