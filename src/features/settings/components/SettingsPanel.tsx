@@ -8,6 +8,11 @@ import {
   clearSavedPreferences,
   savedPreferenceCount,
 } from '@/lib/storage/clearPreferences';
+import {
+  getTailKeepLast,
+  setTailKeepLast,
+  TAIL_BUFFER_OPTIONS,
+} from '@/lib/storage/tailBufferStore';
 
 export interface SettingsPanelProps {
   theme: Theme;
@@ -56,8 +61,14 @@ export function SettingsPanel({
   onClose,
 }: SettingsPanelProps) {
   const [confirming, setConfirming] = useState(false);
+  const [keepLast, setKeepLast] = useState(() => getTailKeepLast() ?? 0);
   // Read live each render so it reflects prefs written while the panel is open.
   const count = savedPreferenceCount();
+
+  const changeKeepLast = (n: number) => {
+    setTailKeepLast(n);
+    setKeepLast(n);
+  };
 
   const handleClear = () => {
     clearSavedPreferences();
@@ -98,6 +109,23 @@ export function SettingsPanel({
             />
             {alertsOn ? 'On' : 'Off'}
           </label>
+        </Row>
+        <Row
+          label="Live-tail buffer"
+          hint="Keep only the newest N rows while tailing (bounds memory on long tails)"
+        >
+          <select
+            value={keepLast}
+            onChange={(e) => changeKeepLast(Number(e.target.value))}
+            aria-label="Live-tail buffer size"
+            className="rounded border border-slate-200 bg-white px-2 py-1 text-sm text-slate-600 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+          >
+            {TAIL_BUFFER_OPTIONS.map((n) => (
+              <option key={n} value={n}>
+                {n === 0 ? 'Unlimited' : `Last ${n.toLocaleString()}`}
+              </option>
+            ))}
+          </select>
         </Row>
       </div>
 
