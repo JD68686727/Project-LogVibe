@@ -117,6 +117,39 @@ describe('deriveColumn (arithmetic)', () => {
   });
 });
 
+const pairDs = () =>
+  assembleDataset(
+    ['host', 'port'],
+    [
+      ['10.0.0.1', '443'],
+      ['10.0.0.2', ''],
+    ],
+    { fileName: 't.csv', fileSize: 0, delimiter: ',', truncated: false },
+  );
+
+describe('deriveColumn (concat)', () => {
+  it('fills a template with column placeholders (by key)', () => {
+    const out = deriveColumn(pairDs(), {
+      kind: 'concat',
+      name: 'endpoint',
+      template: '{host}:{port}',
+    });
+    expect(out.rows.map((r) => r[out.columnIndex.endpoint])).toEqual([
+      '10.0.0.1:443',
+      '10.0.0.2:', // null port → empty
+    ]);
+  });
+
+  it('resolves placeholders by header name and leaves unknown ones literal', () => {
+    const out = deriveColumn(pairDs(), {
+      kind: 'concat',
+      name: 'label',
+      template: '{host} [{missing}]',
+    });
+    expect(out.rows[0][out.columnIndex.label]).toBe('10.0.0.1 [{missing}]');
+  });
+});
+
 describe('dropColumn', () => {
   it('removes a column, its cells, and reindexes', () => {
     const withCol = deriveColumn(ds(), {

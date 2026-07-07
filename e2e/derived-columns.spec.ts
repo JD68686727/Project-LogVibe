@@ -49,3 +49,21 @@ test('derived columns: arithmetic (latency in seconds)', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'latency_s', exact: true })).toBeVisible();
   await expect(page.getByText('0.04', { exact: true }).first()).toBeVisible();
 });
+
+test('derived columns: concat (text template)', async ({ page }) => {
+  await page.goto('/');
+  await page.setInputFiles('input[type="file"]', CSV);
+  await expect(page.getByText('15 of 15 rows')).toBeVisible();
+
+  await page.getByRole('button', { name: /Columns/ }).click();
+  await page.getByRole('radio', { name: 'Text' }).click();
+  await page.getByLabel('New column name').fill('who');
+  await page.getByLabel('Text template').fill('{client_ip} → {endpoint}');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await page.getByRole('button', { name: /Columns/ }).click(); // close the menu
+
+  await expect(page.getByRole('button', { name: 'who', exact: true })).toBeVisible();
+  await expect(
+    page.getByText('10.0.0.4 → /api/users', { exact: true }).first(),
+  ).toBeVisible();
+});
