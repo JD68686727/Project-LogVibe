@@ -2,8 +2,18 @@ import { useCallback, useState } from 'react';
 import type { ColumnType, Dataset } from '@/types/dataset';
 import type { LoadedFile } from '@/types/workspace';
 import { retypeColumn, applyTypeOverrides } from '@/lib/table/retypeColumn';
-import { deriveColumn, dropColumn, type DerivedSpec } from '@/lib/table/deriveColumn';
+import {
+  deriveColumn,
+  dropColumn,
+  applyDerivedSpecs,
+  type DerivedSpec,
+} from '@/lib/table/deriveColumn';
 import { getColumnOverrides, setColumnOverride } from '@/lib/storage/columnTypeStore';
+import {
+  getDerivedSpecs,
+  addDerivedSpec,
+  removeDerivedSpec,
+} from '@/lib/storage/derivedColumnStore';
 
 let idCounter = 0;
 const nextId = () => `file-${Date.now()}-${++idCounter}`;
@@ -31,9 +41,10 @@ export function useWorkspace(): UseWorkspace {
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const addDataset = useCallback((dataset: Dataset) => {
-    // Re-apply any type overrides remembered for this structure.
+    // Re-apply any type overrides + computed columns remembered for this structure.
     const overrides = getColumnOverrides(dataset);
-    const ds = applyTypeOverrides(dataset, overrides);
+    const typed = applyTypeOverrides(dataset, overrides);
+    const ds = applyDerivedSpecs(typed, getDerivedSpecs(typed));
     const file: LoadedFile = { id: nextId(), dataset: ds };
     setFiles((prev) => [...prev, file]);
     setActiveId(file.id); // a newly loaded file becomes active
@@ -70,17 +81,28 @@ export function useWorkspace(): UseWorkspace {
     [],
   );
 
-  const addDerivedColumn = useCallback(
-    (fileId: string, spec: DerivedSpec) =>
-      updateDataset(fileId, (d) => deriveColumn(d, spec)),
-    [updateDataset],
-  );
+  const addDerivedColumn = useCallback((fileId: string, spec: DerivedSpec) => {
+    setFiles((prev) =>
+      prev.map((f) => {
+        if (f.id !== fileId) return f;
+        const dataset = deriveColumn(f.dataset, spec);
+        if (dataset === f.dataset) return f; // no-op (missing source column)
+        const newKey = dataset.columns[dataset.columns.length - 1].key;
+        addDerivedSpec(f.dataset, newKey, spec); // remember for re-open
+        return { ...f, dataset };
+      }),
+    );
+  }, []);
 
-  const removeColumn = useCallback(
-    (fileId: string, columnKey: string) =>
-      updateDataset(fileId, (d) => dropColumn(d, columnKey)),
-    [updateDataset],
-  );
+  const removeColumn = useCallback((fileId: string, columnKey: string) => {
+    setFiles((prev) =>
+      prev.map((f) => {
+        if (f.id !== fileId) return f;
+        removeDerivedSpec(f.dataset, columnKey);
+        return { ...f, dataset: dropColumn(f.dataset, columnKey) };
+      }),
+    );
+  }, []);
 
   // Derive the active file with a fallback so removing the active one (which
   // leaves `activeId` stale) still resolves to a valid file.

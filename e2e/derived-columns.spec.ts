@@ -67,3 +67,22 @@ test('derived columns: concat (text template)', async ({ page }) => {
     page.getByText('10.0.0.4 → /api/users', { exact: true }).first(),
   ).toBeVisible();
 });
+
+test('derived columns: a computed column is remembered across reload', async ({ page }) => {
+  await page.goto('/');
+  await page.setInputFiles('input[type="file"]', CSV);
+  await expect(page.getByText('15 of 15 rows')).toBeVisible();
+
+  await page.getByRole('button', { name: /Columns/ }).click();
+  await page.getByLabel('New column name').fill('resource');
+  await page.getByLabel('Source column').selectOption({ label: 'endpoint' });
+  await page.getByLabel('Extraction regex').fill('^/api/(\\w+)');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'resource', exact: true })).toBeVisible();
+
+  // Reload (data isn't persisted) and re-open the same file: the spec re-applies.
+  await page.reload();
+  await page.setInputFiles('input[type="file"]', CSV);
+  await expect(page.getByText('15 of 15 rows')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'resource', exact: true })).toBeVisible();
+});

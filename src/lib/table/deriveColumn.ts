@@ -183,6 +183,18 @@ export function deriveColumn(dataset: Dataset, spec: DerivedSpec): Dataset {
 }
 
 /**
+ * Applies several derived specs in order (used to re-apply remembered computed
+ * columns when a file with the same structure is re-opened). Deterministic: the
+ * generated keys match those from adding the specs one at a time.
+ */
+export function applyDerivedSpecs(
+  dataset: Dataset,
+  specs: DerivedSpec[],
+): Dataset {
+  return specs.reduce((d, spec) => deriveColumn(d, spec), dataset);
+}
+
+/**
  * Returns a new Dataset with a column removed (used to undo a derived column):
  * drops its schema entry + each row's cell and rebuilds the index. No-op for an
  * unknown key.
