@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ColumnType } from '@/types/dataset';
-import type { DerivedSpec } from '@/lib/table/deriveColumn';
+import type { ArithmeticOp, DerivedSpec } from '@/lib/table/deriveColumn';
 import { btnSecondary } from '@/utils/controls';
 import type { ColumnManagerItem } from '../hooks/useColumnView';
 
@@ -37,25 +37,51 @@ export function ColumnManager({
   const ref = useRef<HTMLDivElement>(null);
 
   // "Add computed column" form state.
+  const [mode, setMode] = useState<'extract' | 'arithmetic'>('extract');
   const [name, setName] = useState('');
   const [sourceKey, setSourceKey] = useState('');
   const [pattern, setPattern] = useState('');
   const [type, setType] = useState<ColumnType>('string');
+  const [left, setLeft] = useState('');
+  const [op, setOp] = useState<ArithmeticOp>('/');
+  const [right, setRight] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  const canSubmit =
+    !!name.trim() && (mode === 'extract' ? !!pattern : !!right.trim());
+
+  // A right operand typed as a column name resolves to its key; else it's a
+  // numeric literal, passed through as-is.
+  const resolveOperand = (token: string) =>
+    items.find((i) => i.name === token || i.key === token)?.key ?? token.trim();
+
   const submitDerived = () => {
-    if (!onAddDerived || !name.trim() || !pattern) return;
-    try {
-      new RegExp(pattern); // validate before committing
-    } catch {
-      setError('Invalid regular expression');
-      return;
+    if (!onAddDerived || !name.trim()) return;
+    if (mode === 'extract') {
+      if (!pattern) return;
+      try {
+        new RegExp(pattern); // validate before committing
+      } catch {
+        setError('Invalid regular expression');
+        return;
+      }
+      const src = sourceKey || items[0]?.key;
+      if (!src) return;
+      onAddDerived({ name: name.trim(), sourceKey: src, pattern, type });
+    } else {
+      if (!right.trim()) return;
+      onAddDerived({
+        kind: 'arithmetic',
+        name: name.trim(),
+        left: left || items[0]?.key || '',
+        op,
+        right: resolveOperand(right),
+        type: type === 'string' ? 'number' : type,
+      });
     }
-    const src = sourceKey || items[0]?.key;
-    if (!src) return;
-    onAddDerived({ name: name.trim(), sourceKey: src, pattern, type });
     setName('');
     setPattern('');
+    setRight('');
     setError(null);
   };
 
@@ -166,6 +192,31 @@ export function ColumnManager({
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                 Add computed column
               </p>
+              <div
+                role="radiogroup"
+                aria-label="Computed column mode"
+                className="inline-flex rounded border border-slate-200 p-0.5 text-xs dark:border-slate-700"
+              >
+                {(['extract', 'arithmetic'] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    role="radio"
+                    aria-checked={mode === m}
+                    onClick={() => {
+                      setMode(m);
+                      setError(null);
+                    }}
+                    className={
+                      mode === m
+                        ? 'rounded bg-brand-600 px-2 py-0.5 font-medium text-white'
+                        : 'rounded px-2 py-0.5 text-slate-500 dark:text-slate-400'
+                    }
+                  >
+                    {m === 'extract' ? 'Regex extract' : 'Math'}
+                  </button>
+                ))}
+              </div>
               <div className="flex gap-1.5">
                 <input
                   value={name}
@@ -174,18 +225,20 @@ export function ColumnManager({
                   aria-label="New column name"
                   className="w-24 rounded border border-slate-200 bg-white px-1.5 py-1 text-xs text-slate-700 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 />
-                <select
-                  value={sourceKey || items[0]?.key || ''}
-                  onChange={(e) => setSourceKey(e.target.value)}
-                  aria-label="Source column"
-                  className="min-w-0 flex-1 rounded border border-slate-200 bg-white px-1 py-1 text-xs text-slate-500 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
-                >
-                  {items.map((it) => (
-                    <option key={it.key} value={it.key}>
-                      {it.name}
-                    </option>
-                  ))}
-                </select>
+                {mode === 'extract' && (
+                  <select
+                    value={sourceKey || items[0]?.key || ''}
+                    onChange={(e) => setSourceKey(e.target.value)}
+                    aria-label="Source column"
+                    className="min-w-0 flex-1 rounded border border-slate-200 bg-white px-1 py-1 text-xs text-slate-500 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                  >
+                    {items.map((it) => (
+                      <option key={it.key} value={it.key}>
+                        {it.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value as ColumnType)}
@@ -199,26 +252,71 @@ export function ColumnManager({
                   ))}
                 </select>
               </div>
-              <div className="flex gap-1.5">
-                <input
-                  value={pattern}
-                  onChange={(e) => {
-                    setPattern(e.target.value);
-                    setError(null);
-                  }}
-                  placeholder="Regex with (capture group)"
-                  aria-label="Extraction regex"
-                  className="min-w-0 flex-1 rounded border border-slate-200 bg-white px-1.5 py-1 font-mono text-xs text-slate-700 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                />
-                <button
-                  type="button"
-                  onClick={submitDerived}
-                  disabled={!name.trim() || !pattern}
-                  className={`${btnSecondary} disabled:opacity-40`}
-                >
-                  Add
-                </button>
-              </div>
+
+              {mode === 'extract' ? (
+                <div className="flex gap-1.5">
+                  <input
+                    value={pattern}
+                    onChange={(e) => {
+                      setPattern(e.target.value);
+                      setError(null);
+                    }}
+                    placeholder="Regex with (capture group)"
+                    aria-label="Extraction regex"
+                    className="min-w-0 flex-1 rounded border border-slate-200 bg-white px-1.5 py-1 font-mono text-xs text-slate-700 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={submitDerived}
+                    disabled={!canSubmit}
+                    className={`${btnSecondary} disabled:opacity-40`}
+                  >
+                    Add
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-1.5">
+                  <select
+                    value={left || items[0]?.key || ''}
+                    onChange={(e) => setLeft(e.target.value)}
+                    aria-label="Left operand"
+                    className="min-w-0 flex-1 rounded border border-slate-200 bg-white px-1 py-1 text-xs text-slate-500 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                  >
+                    {items.map((it) => (
+                      <option key={it.key} value={it.key}>
+                        {it.name}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={op}
+                    onChange={(e) => setOp(e.target.value as ArithmeticOp)}
+                    aria-label="Operator"
+                    className="rounded border border-slate-200 bg-white px-1 py-1 text-xs text-slate-600 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  >
+                    {(['+', '-', '*', '/'] as const).map((o) => (
+                      <option key={o} value={o}>
+                        {o}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    value={right}
+                    onChange={(e) => setRight(e.target.value)}
+                    placeholder="column or number"
+                    aria-label="Right operand"
+                    className="w-24 rounded border border-slate-200 bg-white px-1.5 py-1 text-xs text-slate-700 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={submitDerived}
+                    disabled={!canSubmit}
+                    className={`${btnSecondary} disabled:opacity-40`}
+                  >
+                    Add
+                  </button>
+                </div>
+              )}
               {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
             </div>
           )}

@@ -30,3 +30,22 @@ test('derived columns: add a regex-extracted column, then remove it', async ({ p
   await page.getByRole('button', { name: 'Remove resource' }).click();
   await expect(page.getByRole('button', { name: /^resource/ })).toHaveCount(0);
 });
+
+test('derived columns: arithmetic (latency in seconds)', async ({ page }) => {
+  await page.goto('/');
+  await page.setInputFiles('input[type="file"]', CSV);
+  await expect(page.getByText('15 of 15 rows')).toBeVisible();
+
+  await page.getByRole('button', { name: /Columns/ }).click();
+  await page.getByRole('radio', { name: 'Math' }).click();
+  await page.getByLabel('New column name').fill('latency_s');
+  await page.getByLabel('Left operand').selectOption({ label: 'latency_ms' });
+  await page.getByLabel('Operator').selectOption('/');
+  await page.getByLabel('Right operand').fill('1000');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await page.getByRole('button', { name: /Columns/ }).click(); // close the menu
+
+  // 42 ms → 0.042 s (display-rounded to 0.04) appears in the new column.
+  await expect(page.getByRole('button', { name: 'latency_s', exact: true })).toBeVisible();
+  await expect(page.getByText('0.04', { exact: true }).first()).toBeVisible();
+});

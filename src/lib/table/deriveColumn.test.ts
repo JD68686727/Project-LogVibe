@@ -66,6 +66,57 @@ describe('deriveColumn', () => {
   });
 });
 
+const numDs = () =>
+  assembleDataset(
+    ['latency_ms', 'bytes'],
+    [
+      ['1000', '200'],
+      ['500', '0'],
+      ['x', '10'],
+    ],
+    { fileName: 't.csv', fileSize: 0, delimiter: ',', truncated: false },
+  );
+
+describe('deriveColumn (arithmetic)', () => {
+  it('divides a column by a numeric literal', () => {
+    const out = deriveColumn(numDs(), {
+      kind: 'arithmetic',
+      name: 'latency_s',
+      left: 'latency_ms',
+      op: '/',
+      right: '1000',
+    });
+    expect(out.columns[out.columnIndex.latency_s].type).toBe('number');
+    expect(out.rows.map((r) => r[out.columnIndex.latency_s])).toEqual([
+      1, // 1000/1000
+      0.5, // 500/1000
+      null, // 'x' is non-numeric
+    ]);
+  });
+
+  it('combines two columns', () => {
+    const out = deriveColumn(numDs(), {
+      kind: 'arithmetic',
+      name: 'sum',
+      left: 'latency_ms',
+      op: '+',
+      right: 'bytes',
+    });
+    expect(out.rows[0][out.columnIndex.sum]).toBe(1200);
+  });
+
+  it('returns null on divide-by-zero', () => {
+    const out = deriveColumn(numDs(), {
+      kind: 'arithmetic',
+      name: 'ratio',
+      left: 'latency_ms',
+      op: '/',
+      right: 'bytes',
+    });
+    expect(out.rows[1][out.columnIndex.ratio]).toBe(null); // 500/0
+  });
+});
+
 describe('dropColumn', () => {
   it('removes a column, its cells, and reindexes', () => {
     const withCol = deriveColumn(ds(), {
