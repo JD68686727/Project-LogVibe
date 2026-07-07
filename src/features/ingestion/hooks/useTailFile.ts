@@ -7,6 +7,7 @@ import { decodeBytes, readFileSmart, type Encoding } from '@/lib/csv/encoding';
 import { splitAppended } from '@/lib/csv/splitAppended';
 import { readAppended, type FileLike, type TailReadState } from '@/lib/csv/tailReader';
 import { appendRows, MAX_ROWS } from '@/lib/csv/appendRows';
+import { getTailKeepLast } from '@/lib/storage/tailBufferStore';
 import { compilePattern, parseLine } from '@/lib/log/regexParser';
 
 interface CompiledPattern {
@@ -93,6 +94,7 @@ export function useTailFile({ addDataset, updateDataset }: UseTailFileDeps): Use
   const patternRef = useRef<CompiledPattern | null>(null);
   const rowCountRef = useRef(0);
   const atCapRef = useRef(false);
+  const keepLastRef = useRef<number | null>(null);
 
   const start = useCallback(
     async (pattern?: LogPattern) => {
@@ -153,6 +155,7 @@ export function useTailFile({ addDataset, updateDataset }: UseTailFileDeps): Use
       patternRef.current = compiled;
       rowCountRef.current = dataset.rows.length;
       atCapRef.current = false;
+      keepLastRef.current = getTailKeepLast(); // ring-buffer window, if configured
 
       setStatus({
         supported: true,
@@ -195,6 +198,18 @@ export function useTailFile({ addDataset, updateDataset }: UseTailFileDeps): Use
 
         const parsed = parseLines(lines, delimiterRef.current, patternRef.current);
         if (parsed.length === 0) return;
+
+        // Ring-buffer mode: never hit the cap — evict the oldest beyond the
+        // window so a long tail stays memory-bounded.
+        const keepLast = keepLastRef.current;
+        if (keepLast != null) {
+          rowCountRef.current = Math.min(rowCountRef.current + parsed.length, keepLast);
+          updateDataset(
+            fileId,
+            (prev) => appendRows(prev, parsed, MAX_ROWS, keepLast).dataset,
+          );
+          return;
+        }
 
         const room = MAX_ROWS - rowCountRef.current;
         if (room <= 0) {
