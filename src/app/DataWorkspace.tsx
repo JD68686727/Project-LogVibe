@@ -9,6 +9,7 @@ import { ExtractPanel } from '@/features/filtering/components/ExtractPanel';
 import { normalizeFilterGroups } from '@/lib/filter/normalizeGroups';
 import type { QuickPattern } from '@/lib/filter/patternLibrary';
 import { signatureFor } from '@/lib/storage/viewStore';
+import { getDerivedSpecs } from '@/lib/storage/derivedColumnStore';
 import { getLastView, setLastView } from '@/lib/storage/lastViewStore';
 import { useSortedRows } from '@/features/table/hooks/useSortedRows';
 import { DataTable } from '@/features/table/components/DataTable';
@@ -48,6 +49,8 @@ export interface DataWorkspaceProps {
   onAddDerivedColumn?: (spec: DerivedSpec) => void;
   /** Remove a (derived) column from the active file. */
   onRemoveColumn?: (columnKey: string) => void;
+  /** Recreate computed columns carried by a saved/shared view. */
+  onApplyDerivedSpecs?: (specs: DerivedSpec[]) => void;
   /** Opens a derived dataset (e.g. a security scan's findings) as a new file. */
   onOpenDataset?: (dataset: Dataset) => void;
   /** Display timezone for date columns + chart buckets (default UTC). */
@@ -70,6 +73,7 @@ export function DataWorkspace({
   onRetypeColumn,
   onAddDerivedColumn,
   onRemoveColumn,
+  onApplyDerivedSpecs,
   onOpenDataset,
   timeZone = DEFAULT_TZ,
   autoScroll,
@@ -103,13 +107,15 @@ export function DataWorkspace({
       chart: chartConfig,
       columns: columnViewState,
       pivot: pivotConfig,
+      derived: getDerivedSpecs(dataset),
     }),
-    [groups, query, searchRegex, sortKeys, chartConfig, columnViewState, pivotConfig],
+    [groups, query, searchRegex, sortKeys, chartConfig, columnViewState, pivotConfig, dataset],
   );
 
   // Applies a full view (shared link / saved auto-view) through every stage.
   const applyViewState = useCallback(
     (view: ViewState) => {
+      if (view.derived) onApplyDerivedSpecs?.(view.derived);
       replaceGroups(view.groups);
       setQuery(view.query);
       setSearchRegex(view.searchRegex ?? false);
@@ -118,7 +124,7 @@ export function DataWorkspace({
       applyView(view.columns);
       if (view.pivot) applyPivot(view.pivot);
     },
-    [replaceGroups, setQuery, setSearchRegex, setSort, applyConfig, applyView, applyPivot],
+    [onApplyDerivedSpecs, replaceGroups, setQuery, setSearchRegex, setSort, applyConfig, applyView, applyPivot],
   );
 
   // Apply a view from a shared link once, now that the dataset exists.
@@ -153,18 +159,26 @@ export function DataWorkspace({
 
   const handleApply = useCallback(
     (view: SavedView) => {
+      if (view.derived) onApplyDerivedSpecs?.(view.derived);
       replaceGroups(normalizeFilterGroups(view.groups, view.filters));
       applyConfig(view.chart);
       if (view.columns) applyView(view.columns);
       if (view.pivot) applyPivot(view.pivot);
     },
-    [replaceGroups, applyConfig, applyView, applyPivot],
+    [onApplyDerivedSpecs, replaceGroups, applyConfig, applyView, applyPivot],
   );
 
   const handleSave = useCallback(
     (name: string) =>
-      presets.savePreset(name, groups, chartConfig, columnViewState, pivotConfig),
-    [presets, groups, chartConfig, columnViewState, pivotConfig],
+      presets.savePreset(
+        name,
+        groups,
+        chartConfig,
+        columnViewState,
+        pivotConfig,
+        getDerivedSpecs(dataset),
+      ),
+    [presets, groups, chartConfig, columnViewState, pivotConfig, dataset],
   );
 
   return (

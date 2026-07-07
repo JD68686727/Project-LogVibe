@@ -5,7 +5,7 @@ import { retypeColumn, applyTypeOverrides } from '@/lib/table/retypeColumn';
 import {
   deriveColumn,
   dropColumn,
-  applyDerivedSpecs,
+  applyDerivedSpecs as replayDerivedSpecs,
   type DerivedSpec,
 } from '@/lib/table/deriveColumn';
 import { getColumnOverrides, setColumnOverride } from '@/lib/storage/columnTypeStore';
@@ -33,6 +33,9 @@ export interface UseWorkspace {
   addDerivedColumn: (fileId: string, spec: DerivedSpec) => void;
   /** Remove a column (used to undo a derived column) from a file's dataset. */
   removeColumn: (fileId: string, columnKey: string) => void;
+  /** Apply computed-column recipes from a saved/shared view (skips ones already
+   *  present), recreating them on the file. */
+  applyDerivedSpecs: (fileId: string, specs: DerivedSpec[]) => void;
 }
 
 /** Holds the collection of loaded files and which one is active in Analyze mode. */
@@ -44,7 +47,7 @@ export function useWorkspace(): UseWorkspace {
     // Re-apply any type overrides + computed columns remembered for this structure.
     const overrides = getColumnOverrides(dataset);
     const typed = applyTypeOverrides(dataset, overrides);
-    const ds = applyDerivedSpecs(typed, getDerivedSpecs(typed));
+    const ds = replayDerivedSpecs(typed, getDerivedSpecs(typed));
     const file: LoadedFile = { id: nextId(), dataset: ds };
     setFiles((prev) => [...prev, file]);
     setActiveId(file.id); // a newly loaded file becomes active
@@ -104,6 +107,29 @@ export function useWorkspace(): UseWorkspace {
     );
   }, []);
 
+  const applyDerivedSpecs = useCallback((fileId: string, specs: DerivedSpec[]) => {
+    if (specs.length === 0) return;
+    setFiles((prev) =>
+      prev.map((f) => {
+        if (f.id !== fileId) return f;
+        // Skip recipes already applied to this file (idempotent re-apply).
+        const present = new Set(
+          getDerivedSpecs(f.dataset).map((s) => JSON.stringify(s)),
+        );
+        let dataset = f.dataset;
+        for (const spec of specs) {
+          if (present.has(JSON.stringify(spec))) continue;
+          const next = deriveColumn(dataset, spec);
+          if (next === dataset) continue; // missing source column
+          const newKey = next.columns[next.columns.length - 1].key;
+          addDerivedSpec(f.dataset, newKey, spec);
+          dataset = next;
+        }
+        return dataset === f.dataset ? f : { ...f, dataset };
+      }),
+    );
+  }, []);
+
   // Derive the active file with a fallback so removing the active one (which
   // leaves `activeId` stale) still resolves to a valid file.
   const activeFile =
@@ -119,5 +145,6 @@ export function useWorkspace(): UseWorkspace {
     setColumnType,
     addDerivedColumn,
     removeColumn,
+    applyDerivedSpecs,
   };
 }

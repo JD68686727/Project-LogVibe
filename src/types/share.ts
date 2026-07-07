@@ -2,6 +2,7 @@ import type { ChartConfig } from './chart';
 import type { FilterGroup } from './filter';
 import type { PivotConfig } from './pivot';
 import type { ColumnViewItem, SortKey } from './table';
+import type { DerivedSpec } from '@/lib/table/deriveColumn';
 
 /**
  * The full analyze-view configuration that a shareable link carries. Like saved
@@ -20,4 +21,7 @@ export interface ViewState {
   columns: ColumnViewItem[];
   /** Pivot cross-tab config. Optional for back-compat with pre-pivot links. */
   pivot?: PivotConfig;
+  /** Computed-column recipes (regex/math/concat) to recreate on the recipient's
+   *  file. Config only — no row data. Optional for back-compat. */
+  derived?: DerivedSpec[];
 }

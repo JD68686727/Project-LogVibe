@@ -5,6 +5,7 @@ import type { FilterGroup } from '@/types/filter';
 import type { PivotConfig } from '@/types/pivot';
 import type { ColumnViewItem } from '@/types/table';
 import type { SavedView } from '@/types/view';
+import type { DerivedSpec } from '@/lib/table/deriveColumn';
 import {
   deleteView,
   getViews,
@@ -23,6 +24,7 @@ export interface UsePresets {
     chart: ChartConfig,
     columns: ColumnViewItem[],
     pivot: PivotConfig,
+    derived: DerivedSpec[],
   ) => void;
   deletePreset: (id: string) => void;
 }
@@ -44,6 +46,7 @@ export function usePresets(dataset: Dataset): UsePresets {
       chart: ChartConfig,
       columns: ColumnViewItem[],
       pivot: PivotConfig,
+      derived: DerivedSpec[],
     ) => {
       const view: SavedView = {
         id: nextId(),
@@ -53,6 +56,7 @@ export function usePresets(dataset: Dataset): UsePresets {
         chart,
         columns,
         pivot,
+        derived: derived.length > 0 ? derived : undefined,
         createdAt: Date.now(),
       };
       setViews(saveView(view));

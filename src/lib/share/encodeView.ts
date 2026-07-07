@@ -1,6 +1,7 @@
 import type { ViewState } from '@/types/share';
 import type { PivotConfig } from '@/types/pivot';
 import type { SortKey } from '@/types/table';
+import type { DerivedSpec } from '@/lib/table/deriveColumn';
 import { normalizeFilterGroups } from '@/lib/filter/normalizeGroups';
 
 /** URL-safe base64 of a UTF-8 string (browser-native, no deps). */
@@ -50,6 +51,33 @@ function isPivotConfig(value: unknown): value is PivotConfig {
   );
 }
 
+const COLUMN_TYPES = new Set(['string', 'number', 'boolean', 'date']);
+
+/** Validates one computed-column recipe from an untrusted link. */
+function isDerivedSpec(value: unknown): value is DerivedSpec {
+  if (typeof value !== 'object' || value === null) return false;
+  const s = value as Record<string, unknown>;
+  if (typeof s.name !== 'string') return false;
+  if (s.type !== undefined && !COLUMN_TYPES.has(s.type as string)) return false;
+  if (s.kind === 'arithmetic') {
+    return (
+      typeof s.left === 'string' &&
+      typeof s.right === 'string' &&
+      (s.op === '+' || s.op === '-' || s.op === '*' || s.op === '/')
+    );
+  }
+  if (s.kind === 'concat') return typeof s.template === 'string';
+  // extract (kind undefined or 'extract')
+  return typeof s.sourceKey === 'string' && typeof s.pattern === 'string';
+}
+
+/** Keeps only well-formed derived specs; undefined when absent/empty. */
+function normalizeDerived(raw: unknown): DerivedSpec[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const specs = raw.filter(isDerivedSpec);
+  return specs.length > 0 ? specs : undefined;
+}
+
 /** Validates the shared fields; `sort`/`groups` are normalised separately. */
 function isViewBase(value: unknown): boolean {
   if (typeof value !== 'object' || value === null) return false;
@@ -78,6 +106,7 @@ export function decodeView(token: string): ViewState | null {
       chart: raw.chart as ViewState['chart'],
       columns: raw.columns as ViewState['columns'],
       pivot: isPivotConfig(raw.pivot) ? raw.pivot : undefined,
+      derived: normalizeDerived(raw.derived),
     };
   } catch {
     return null;
