@@ -2,7 +2,7 @@ import type { CellValue, ColumnSchema, ColumnType, Dataset } from '@/types/datas
 
 /** Builds a Dataset from a compact column spec + raw rows, for tests. */
 export function makeDataset(
-  columns: { name: string; key?: string; type: ColumnType }[],
+  columns: { name: string; key?: string; type: ColumnType; derived?: boolean }[],
   rows: CellValue[][],
   meta?: Partial<Dataset['meta']>,
 ): Dataset {
@@ -10,6 +10,7 @@ export function makeDataset(
     name: c.name,
     key: c.key ?? c.name,
     type: c.type,
+    ...(c.derived ? { derived: true } : {}),
   }));
   const columnIndex: Record<string, number> = {};
   cols.forEach((c, i) => {
