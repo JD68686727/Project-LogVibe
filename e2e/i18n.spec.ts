@@ -47,4 +47,9 @@ test('i18n: the filter bar is translated after switching to German', async ({
   await expect(page.getByText('15 von 15 Zeilen')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Schnellfilter' })).toBeVisible();
   await expect(page.getByRole('button', { name: '+ Filter hinzufügen' })).toBeVisible();
+
+  // Column manager is translated too.
+  await page.getByRole('button', { name: /Spalten/ }).click();
+  await expect(page.getByText('Berechnete Spalte hinzufügen')).toBeVisible();
+  await expect(page.getByRole('radio', { name: 'Rechnen' })).toBeVisible();
 });

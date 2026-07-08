@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ColumnType } from '@/types/dataset';
 import type { ArithmeticOp, DerivedSpec } from '@/lib/table/deriveColumn';
 import { btnSecondary } from '@/utils/controls';
+import { useI18n } from '@/lib/i18n/I18nContext';
 import type { ColumnManagerItem } from '../hooks/useColumnView';
 
 export interface ColumnManagerProps {
@@ -33,6 +34,7 @@ export function ColumnManager({
   onAddDerived,
   onRemove,
 }: ColumnManagerProps) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -70,7 +72,7 @@ export function ColumnManager({
       try {
         new RegExp(pattern); // validate before committing
       } catch {
-        setError('Invalid regular expression');
+        setError(t('common.regexInvalid'));
         return;
       }
       const src = sourceKey || items[0]?.key;
@@ -129,7 +131,7 @@ export function ColumnManager({
         >
           <path d="M4 6h16M4 12h16M4 18h16" />
         </svg>
-        Columns
+        {t('column.title')}
         <span className="text-xs text-slate-400 dark:text-slate-500">
           {visibleCount}/{items.length}
         </span>
@@ -155,7 +157,7 @@ export function ColumnManager({
                 </label>
                 {onRetype && (
                   <select
-                    aria-label={`Type of ${item.name}`}
+                    aria-label={t('column.typeOf', { name: item.name })}
                     value={item.type}
                     onChange={(e) => onRetype(item.key, e.target.value as ColumnType)}
                     className="rounded border border-slate-200 bg-white px-1 py-0.5 text-xs text-slate-500 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
@@ -171,7 +173,7 @@ export function ColumnManager({
                   type="button"
                   onClick={() => onMove(item.key, 'up')}
                   disabled={idx === 0}
-                  aria-label={`Move ${item.name} up`}
+                  aria-label={t('column.moveUp', { name: item.name })}
                   className={moveBtnCls}
                 >
                   ↑
@@ -180,7 +182,7 @@ export function ColumnManager({
                   type="button"
                   onClick={() => onMove(item.key, 'down')}
                   disabled={idx === items.length - 1}
-                  aria-label={`Move ${item.name} down`}
+                  aria-label={t('column.moveDown', { name: item.name })}
                   className={moveBtnCls}
                 >
                   ↓
@@ -189,7 +191,7 @@ export function ColumnManager({
                   <button
                     type="button"
                     onClick={() => onRemove(item.key)}
-                    aria-label={`Remove ${item.name}`}
+                    aria-label={t('column.remove', { name: item.name })}
                     className={`${moveBtnCls} hover:!bg-red-50 hover:!text-red-600 dark:hover:!bg-red-950/40`}
                   >
                     ✕
@@ -202,11 +204,11 @@ export function ColumnManager({
           {onAddDerived && (
             <div className="mt-1 space-y-1.5 border-t border-slate-100 px-2 pt-2 dark:border-slate-800">
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                Add computed column
+                {t('column.addComputed')}
               </p>
               <div
                 role="radiogroup"
-                aria-label="Computed column mode"
+                aria-label={t('column.mode')}
                 className="inline-flex rounded border border-slate-200 p-0.5 text-xs dark:border-slate-700"
               >
                 {(['extract', 'arithmetic', 'concat'] as const).map((m) => (
@@ -225,7 +227,11 @@ export function ColumnManager({
                         : 'rounded px-2 py-0.5 text-slate-500 dark:text-slate-400'
                     }
                   >
-                    {m === 'extract' ? 'Regex' : m === 'arithmetic' ? 'Math' : 'Text'}
+                    {m === 'extract'
+                      ? t('column.mode.regex')
+                      : m === 'arithmetic'
+                        ? t('column.mode.math')
+                        : t('column.mode.text')}
                   </button>
                 ))}
               </div>
@@ -233,15 +239,15 @@ export function ColumnManager({
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Name"
-                  aria-label="New column name"
+                  placeholder={t('column.name')}
+                  aria-label={t('column.nameAria')}
                   className="w-24 rounded border border-slate-200 bg-white px-1.5 py-1 text-xs text-slate-700 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 />
                 {mode === 'extract' && (
                   <select
                     value={sourceKey || items[0]?.key || ''}
                     onChange={(e) => setSourceKey(e.target.value)}
-                    aria-label="Source column"
+                    aria-label={t('column.source')}
                     className="min-w-0 flex-1 rounded border border-slate-200 bg-white px-1 py-1 text-xs text-slate-500 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
                   >
                     {items.map((it) => (
@@ -254,7 +260,7 @@ export function ColumnManager({
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value as ColumnType)}
-                  aria-label="New column type"
+                  aria-label={t('column.type')}
                   className="rounded border border-slate-200 bg-white px-1 py-1 text-xs text-slate-500 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
                 >
                   {COLUMN_TYPES.map((t) => (
@@ -273,8 +279,8 @@ export function ColumnManager({
                       setPattern(e.target.value);
                       setError(null);
                     }}
-                    placeholder="Regex with (capture group)"
-                    aria-label="Extraction regex"
+                    placeholder={t('column.regexPlaceholder')}
+                    aria-label={t('column.regexAria')}
                     className="min-w-0 flex-1 rounded border border-slate-200 bg-white px-1.5 py-1 font-mono text-xs text-slate-700 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                   />
                   <button
@@ -283,7 +289,7 @@ export function ColumnManager({
                     disabled={!canSubmit}
                     className={`${btnSecondary} disabled:opacity-40`}
                   >
-                    Add
+                    {t('column.add')}
                   </button>
                 </div>
               ) : mode === 'arithmetic' ? (
@@ -291,7 +297,7 @@ export function ColumnManager({
                   <select
                     value={left || items[0]?.key || ''}
                     onChange={(e) => setLeft(e.target.value)}
-                    aria-label="Left operand"
+                    aria-label={t('column.leftOperand')}
                     className="min-w-0 flex-1 rounded border border-slate-200 bg-white px-1 py-1 text-xs text-slate-500 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
                   >
                     {items.map((it) => (
@@ -303,7 +309,7 @@ export function ColumnManager({
                   <select
                     value={op}
                     onChange={(e) => setOp(e.target.value as ArithmeticOp)}
-                    aria-label="Operator"
+                    aria-label={t('filter.operator')}
                     className="rounded border border-slate-200 bg-white px-1 py-1 text-xs text-slate-600 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                   >
                     {(['+', '-', '*', '/'] as const).map((o) => (
@@ -315,8 +321,8 @@ export function ColumnManager({
                   <input
                     value={right}
                     onChange={(e) => setRight(e.target.value)}
-                    placeholder="column or number"
-                    aria-label="Right operand"
+                    placeholder={t('column.orNumber')}
+                    aria-label={t('column.rightOperand')}
                     className="w-24 rounded border border-slate-200 bg-white px-1.5 py-1 text-xs text-slate-700 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                   />
                   <button
@@ -325,7 +331,7 @@ export function ColumnManager({
                     disabled={!canSubmit}
                     className={`${btnSecondary} disabled:opacity-40`}
                   >
-                    Add
+                    {t('column.add')}
                   </button>
                 </div>
               ) : (
@@ -334,7 +340,7 @@ export function ColumnManager({
                     value={template}
                     onChange={(e) => setTemplate(e.target.value)}
                     placeholder="{host}:{port}"
-                    aria-label="Text template"
+                    aria-label={t('column.templateAria')}
                     className="min-w-0 flex-1 rounded border border-slate-200 bg-white px-1.5 py-1 font-mono text-xs text-slate-700 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                   />
                   <button
@@ -343,7 +349,7 @@ export function ColumnManager({
                     disabled={!canSubmit}
                     className={`${btnSecondary} disabled:opacity-40`}
                   >
-                    Add
+                    {t('column.add')}
                   </button>
                 </div>
               )}
@@ -357,14 +363,14 @@ export function ColumnManager({
               onClick={onShowAll}
               className="text-xs font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400"
             >
-              Show all
+              {t('column.showAll')}
             </button>
             <button
               type="button"
               onClick={onReset}
               className="text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
             >
-              Reset order
+              {t('column.resetOrder')}
             </button>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ColumnManager } from './ColumnManager';
+import { I18nProvider } from '@/lib/i18n/I18nContext';
 import type { ColumnManagerItem } from '../hooks/useColumnView';
 
 const baseItems: ColumnManagerItem[] = [
@@ -19,7 +20,11 @@ function renderManager(items: ColumnManagerItem[] = baseItems) {
     onShowAll: vi.fn(),
     onReset: vi.fn(),
   };
-  render(<ColumnManager items={items} {...handlers} />);
+  render(
+    <I18nProvider>
+      <ColumnManager items={items} {...handlers} />
+    </I18nProvider>,
+  );
   return handlers;
 }
 
