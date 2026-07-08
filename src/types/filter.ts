@@ -1,4 +1,5 @@
 import type { ColumnType } from './dataset';
+import type { TKey } from '@/lib/i18n/translations';
 
 export type FilterOperator =
   | 'contains'
@@ -39,7 +40,8 @@ export interface FilterGroup {
 
 export interface OperatorMeta {
   value: FilterOperator;
-  label: string;
+  /** i18n key resolved at render time (see filter.op.* in translations). */
+  label: TKey;
   /** Number of operands the operator needs (0 = unary, 2 = range). */
   arity: 0 | 1 | 2;
   /** Column types this operator is offered for. */

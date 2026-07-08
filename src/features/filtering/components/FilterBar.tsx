@@ -2,6 +2,7 @@ import { cn } from '@/utils/cn';
 import type { Dataset } from '@/types/dataset';
 import type { ColumnFilter, FilterGroup } from '@/types/filter';
 import type { QuickPattern } from '@/lib/filter/patternLibrary';
+import { useI18n } from '@/lib/i18n/I18nContext';
 import { FilterRow } from './FilterRow';
 import { QuickFilters } from './QuickFilters';
 
@@ -56,6 +57,7 @@ export function FilterBar({
   resultCount,
   totalCount,
 }: FilterBarProps) {
+  const { t } = useI18n();
   const isFiltered = resultCount !== totalCount;
   const regexInvalid = searchRegex && query !== '' && !isValidRegex(query);
 
@@ -81,8 +83,8 @@ export function FilterBar({
             type="text"
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
-            placeholder={searchRegex ? 'Search by regex…' : 'Search all columns…'}
-            aria-label="Search all columns"
+            placeholder={searchRegex ? t('filter.searchRegex') : t('filter.searchAll')}
+            aria-label={t('filter.searchAria')}
             spellCheck={false}
             className={cn(
               'w-full rounded-lg border bg-white py-2 pl-9 pr-16 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 dark:bg-slate-800 dark:text-slate-200 dark:placeholder:text-slate-500',
@@ -96,9 +98,9 @@ export function FilterBar({
             <button
               type="button"
               onClick={onToggleRegex}
-              aria-label="Regex search"
+              aria-label={t('filter.regexAria')}
               aria-pressed={searchRegex}
-              title="Match as a regular expression"
+              title={t('filter.regexTitle')}
               className={cn(
                 'flex h-6 items-center rounded px-1 font-mono text-xs font-semibold',
                 searchRegex
@@ -112,7 +114,7 @@ export function FilterBar({
               <button
                 type="button"
                 onClick={() => onQueryChange('')}
-                aria-label="Clear search"
+                aria-label={t('filter.clearSearch')}
                 className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-300"
               >
                 <svg
@@ -133,13 +135,13 @@ export function FilterBar({
         <QuickFilters onFilter={onQuickPattern} onExtract={onExtract} />
       </div>
       <p className="mb-3 h-4 px-1 text-xs text-rose-600 dark:text-rose-400">
-        {regexInvalid ? 'Invalid regular expression' : ''}
+        {regexInvalid ? t('common.regexInvalid') : ''}
       </p>
 
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm">
           <span className="font-semibold text-slate-700 dark:text-slate-200">
-            Filters
+            {t('filter.heading')}
           </span>
           <span
             aria-live="polite"
@@ -149,7 +151,10 @@ export function FilterBar({
                 : 'text-xs text-slate-400 dark:text-slate-500'
             }
           >
-            {resultCount.toLocaleString()} of {totalCount.toLocaleString()} rows
+            {t('filter.rowCount', {
+              n: resultCount.toLocaleString(),
+              total: totalCount.toLocaleString(),
+            })}
           </span>
         </div>
 
@@ -160,11 +165,11 @@ export function FilterBar({
               onClick={onClear}
               className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-500 hover:bg-slate-200 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
             >
-              Clear all
+              {t('filter.clearAll')}
             </button>
           )}
           <button type="button" onClick={onAddGroup} className={addBtn}>
-            + Add filter
+            {t('filter.addFilter')}
           </button>
         </div>
       </div>
@@ -177,7 +182,7 @@ export function FilterBar({
                 <div className="my-1 flex items-center gap-2" aria-hidden>
                   <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
                   <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">
-                    or
+                    {t('filter.or')}
                   </span>
                   <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
                 </div>
@@ -188,7 +193,7 @@ export function FilterBar({
                     <div key={filter.id}>
                       {fi > 0 && (
                         <div className="px-1 py-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
-                          and
+                          {t('filter.and')}
                         </div>
                       )}
                       <FilterRow
@@ -206,15 +211,15 @@ export function FilterBar({
                     onClick={() => onAddCondition(group.id)}
                     className={linkBtn}
                   >
-                    + AND condition
+                    {t('filter.andCondition')}
                   </button>
                   <button
                     type="button"
                     onClick={() => onRemoveGroup(group.id)}
-                    aria-label="Remove group"
+                    aria-label={t('filter.removeGroup')}
                     className="text-xs font-medium text-slate-400 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-400"
                   >
-                    Remove group
+                    {t('filter.removeGroup')}
                   </button>
                 </div>
               </div>
@@ -226,7 +231,7 @@ export function FilterBar({
             onClick={onAddGroup}
             className="self-start rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-500 hover:border-brand-400 hover:text-brand-600 dark:border-slate-700 dark:text-slate-400 dark:hover:border-brand-500 dark:hover:text-brand-300"
           >
-            + OR group
+            {t('filter.orGroup')}
           </button>
         </div>
       )}

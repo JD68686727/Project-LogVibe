@@ -1,6 +1,7 @@
 import type { Dataset } from '@/types/dataset';
 import type { ColumnFilter, FilterOperator } from '@/types/filter';
 import { getOperator, operatorsForType } from '@/lib/filter/operators';
+import { useI18n } from '@/lib/i18n/I18nContext';
 import { selectCls } from '@/utils/controls';
 
 const inputCls = `${selectCls} w-36`;
@@ -14,6 +15,7 @@ export interface FilterRowProps {
 
 /** Editor for a single column filter: column · operator · operand(s). */
 export function FilterRow({ dataset, filter, onChange, onRemove }: FilterRowProps) {
+  const { t } = useI18n();
   const colIdx = dataset.columnIndex[filter.columnKey];
   const column = dataset.columns[colIdx] ?? dataset.columns[0];
   const ops = operatorsForType(column.type);
@@ -38,12 +40,13 @@ export function FilterRow({ dataset, filter, onChange, onRemove }: FilterRowProp
   };
 
   const inputType = column.type === 'number' ? 'number' : 'text';
-  const placeholder = column.type === 'date' ? 'YYYY-MM-DD' : 'value';
+  const placeholder =
+    column.type === 'date' ? 'YYYY-MM-DD' : t('filter.valuePlaceholder');
 
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5 dark:border-slate-800 dark:bg-slate-900">
       <select
-        aria-label="Column"
+        aria-label={t('filter.column')}
         value={filter.columnKey}
         onChange={(e) => handleColumnChange(e.target.value)}
         className={selectCls}
@@ -56,14 +59,14 @@ export function FilterRow({ dataset, filter, onChange, onRemove }: FilterRowProp
       </select>
 
       <select
-        aria-label="Operator"
+        aria-label={t('filter.operator')}
         value={filter.operator}
         onChange={(e) => handleOperatorChange(e.target.value as FilterOperator)}
         className={selectCls}
       >
         {ops.map((o) => (
           <option key={o.value} value={o.value}>
-            {o.label}
+            {t(o.label)}
           </option>
         ))}
       </select>
@@ -71,7 +74,7 @@ export function FilterRow({ dataset, filter, onChange, onRemove }: FilterRowProp
       {arity >= 1 && (
         <input
           type={inputType}
-          aria-label="Value"
+          aria-label={t('filter.value')}
           value={filter.value}
           placeholder={placeholder}
           onChange={(e) => onChange({ value: e.target.value })}
@@ -81,10 +84,12 @@ export function FilterRow({ dataset, filter, onChange, onRemove }: FilterRowProp
 
       {arity === 2 && (
         <>
-          <span className="text-xs text-slate-400 dark:text-slate-500">and</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            {t('filter.and')}
+          </span>
           <input
             type={inputType}
-            aria-label="Second value"
+            aria-label={t('filter.value2')}
             value={filter.value2 ?? ''}
             placeholder={placeholder}
             onChange={(e) => onChange({ value2: e.target.value })}
@@ -96,7 +101,7 @@ export function FilterRow({ dataset, filter, onChange, onRemove }: FilterRowProp
       <button
         type="button"
         onClick={onRemove}
-        aria-label="Remove filter"
+        aria-label={t('filter.removeFilter')}
         className="ml-auto flex h-6 w-6 items-center justify-center rounded-md text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:text-slate-500 dark:hover:bg-rose-500/15 dark:hover:text-rose-400"
       >
         <svg
