@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import type { ViewState } from '@/types/share';
 import { encodeView } from '@/lib/share/encodeView';
 import { cn } from '@/utils/cn';
+import { useI18n } from '@/lib/i18n/I18nContext';
 
 export interface ShareButtonProps {
   /** Builds the current view on demand (only when the button is clicked). */
@@ -9,6 +10,7 @@ export interface ShareButtonProps {
 }
 
 export function ShareButton({ getView }: ShareButtonProps) {
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
 
   const handleShare = useCallback(async () => {
@@ -52,7 +54,7 @@ export function ShareButton({ getView }: ShareButtonProps) {
         <circle cx="18" cy="19" r="3" />
         <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
       </svg>
-      {copied ? 'Link copied!' : 'Share view'}
+      {copied ? t('share.copied') : t('share.view')}
     </button>
   );
 }
