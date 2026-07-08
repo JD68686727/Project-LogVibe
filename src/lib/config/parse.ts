@@ -8,7 +8,15 @@ export interface ConfigEntry {
 }
 
 /** Supported config dialects. `generic` = whitespace-separated key/value. */
-export type ConfigSyntax = 'ssh' | 'apache' | 'nginx' | 'cisco' | 'ini' | 'generic';
+export type ConfigSyntax =
+  | 'ssh'
+  | 'apache'
+  | 'nginx'
+  | 'cisco'
+  | 'docker'
+  | 'firewall'
+  | 'ini'
+  | 'generic';
 
 /** Picks a dialect from the filename, then a light content sniff. */
 export function detectSyntax(fileName: string, text: string): ConfigSyntax {
@@ -39,6 +47,25 @@ export function detectSyntax(fileName: string, text: string): ConfigSyntax {
     (/^!/m.test(text) && /^\s*(?:interface|hostname)\s+\S+/im.test(text))
   ) {
     return 'cisco';
+  }
+  if (
+    n.includes('docker') ||
+    n.includes('compose') ||
+    n.endsWith('dockerfile') ||
+    /^\s*services:\s*$/im.test(text) ||
+    /^\s*image:\s*\S+/im.test(text) ||
+    /^FROM\s+\S+/im.test(text)
+  ) {
+    return 'docker';
+  }
+  if (
+    /iptables|ufw|firewall|rules\.v[46]/.test(n) ||
+    /^\*filter\b/im.test(text) ||
+    /^\s*-[AP]\s+(?:INPUT|OUTPUT|FORWARD)\b/im.test(text) ||
+    /^\s*ufw\s+/im.test(text) ||
+    /^Chain\s+\w+\s+\(policy/im.test(text)
+  ) {
+    return 'firewall';
   }
   if (/\.(ini|cfg)$/.test(n) || /^\s*\[[^\]]+\]\s*$/m.test(text)) return 'ini';
   return 'generic';
@@ -110,6 +137,27 @@ export function parseCiscoIos(text: string): ConfigEntry[] {
   return out;
 }
 
+/**
+ * One entry per non-empty, non-`#` line (key = first token, value = the rest,
+ * `raw` kept). Used for line-pattern dialects (Docker Compose, firewall rules)
+ * whose checks match the raw line rather than a single key/value pair.
+ */
+export function parseRawLines(text: string): ConfigEntry[] {
+  const out: ConfigEntry[] = [];
+  text.split(/\r?\n/).forEach((raw, i) => {
+    const line = raw.replace(/#.*$/, '').trim();
+    if (!line) return;
+    const m = /^(\S+)\s*(.*)$/.exec(line);
+    out.push({
+      key: m ? m[1] : line,
+      value: m ? m[2].trim() : '',
+      line: i + 1,
+      raw,
+    });
+  });
+  return out;
+}
+
 export function parseConfig(text: string, syntax: ConfigSyntax): ConfigEntry[] {
   switch (syntax) {
     case 'ini':
@@ -118,6 +166,9 @@ export function parseConfig(text: string, syntax: ConfigSyntax): ConfigEntry[] {
       return parseNginx(text);
     case 'cisco':
       return parseCiscoIos(text);
+    case 'docker':
+    case 'firewall':
+      return parseRawLines(text);
     default:
       return parseSpaceKv(text); // ssh, apache, generic
   }

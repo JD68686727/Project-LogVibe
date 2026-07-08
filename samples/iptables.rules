@@ -1,0 +1,12 @@
+# Example iptables-save output with hardening issues (config audit demo)
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-P INPUT ACCEPT
+-P FORWARD ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -p tcp --dport 22 -s 10.0.0.0/8 -j ACCEPT
+-A INPUT -p tcp --dport 3306 -j ACCEPT
+-A INPUT -p tcp --dport 23 -j ACCEPT
+COMMIT

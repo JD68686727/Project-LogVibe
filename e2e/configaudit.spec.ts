@@ -5,6 +5,8 @@ const SSHD = path.join(process.cwd(), 'samples', 'sshd_config');
 const NGINX = path.join(process.cwd(), 'samples', 'nginx.conf');
 const CISCO = path.join(process.cwd(), 'samples', 'cisco-ios.conf');
 const HTTPD = path.join(process.cwd(), 'samples', 'httpd.conf');
+const DOCKER = path.join(process.cwd(), 'samples', 'docker-compose.yml');
+const IPTABLES = path.join(process.cwd(), 'samples', 'iptables.rules');
 
 test('config audit: sshd_config hardening issues are surfaced', async ({
   page,
@@ -55,4 +57,24 @@ test('config audit: apache dialect flags HTTP TRACE', async ({ page }) => {
 
   await expect(modal.getByText(/APACHE ·/)).toBeVisible();
   await expect(modal.getByText('apache-trace-enable')).toBeVisible();
+});
+
+test('config audit: docker compose flags a privileged container', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Audit it for hardening issues' }).click();
+  const modal = page.getByTestId('config-audit');
+  await modal.locator('input[type="file"]').setInputFiles(DOCKER);
+
+  await expect(modal.getByText(/DOCKER ·/)).toBeVisible();
+  await expect(modal.getByText('docker-privileged')).toBeVisible();
+});
+
+test('config audit: firewall rules flag allow-by-default policy', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Audit it for hardening issues' }).click();
+  const modal = page.getByTestId('config-audit');
+  await modal.locator('input[type="file"]').setInputFiles(IPTABLES);
+
+  await expect(modal.getByText(/FIREWALL ·/)).toBeVisible();
+  await expect(modal.getByText('fw-iptables-input-accept')).toBeVisible();
 });
