@@ -1,13 +1,15 @@
 import type { Dataset } from '@/types/dataset';
+import type { TKey } from '@/lib/i18n/translations';
 
 /** A ready-made search pattern for the one-click "quick filters" library. */
 export interface QuickPattern {
   id: string;
-  label: string;
+  /** i18n key for the display name (resolved at render). */
+  label: TKey;
   /** RegExp source matched against cell text (case-insensitive). */
   regex: string;
-  /** Short note shown in the dropdown. */
-  hint: string;
+  /** i18n key for the short note shown in the dropdown. */
+  hint: TKey;
 }
 
 /**
@@ -19,39 +21,39 @@ export interface QuickPattern {
 export const PATTERN_LIBRARY: QuickPattern[] = [
   {
     id: 'ipv4',
-    label: 'IPv4 address',
+    label: 'filter.pattern.ipv4.label',
     regex: '\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b',
-    hint: 'e.g. 10.0.0.4',
+    hint: 'filter.pattern.ipv4.hint',
   },
   {
     id: 'ipv6',
-    label: 'IPv6 address',
+    label: 'filter.pattern.ipv6.label',
     regex: '\\b(?:[0-9a-f]{1,4}:){2,7}[0-9a-f]{1,4}\\b',
-    hint: 'e.g. fe80::1ff:fe23',
+    hint: 'filter.pattern.ipv6.hint',
   },
   {
     id: 'mac',
-    label: 'MAC address',
+    label: 'filter.pattern.mac.label',
     regex: '\\b(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}\\b',
-    hint: 'e.g. 00:1A:2B:3C:4D:5E',
+    hint: 'filter.pattern.mac.hint',
   },
   {
     id: 'email',
-    label: 'E-mail address',
+    label: 'filter.pattern.email.label',
     regex: '\\b[\\w.+-]+@[\\w-]+\\.[\\w.-]+\\b',
-    hint: 'e.g. ops@example.com',
+    hint: 'filter.pattern.email.hint',
   },
   {
     id: 'http-err',
-    label: 'HTTP 4xx / 5xx',
+    label: 'filter.pattern.http-err.label',
     regex: '\\b[45]\\d{2}\\b',
-    hint: 'client & server errors',
+    hint: 'filter.pattern.http-err.hint',
   },
   {
     id: 'uuid',
-    label: 'UUID',
+    label: 'filter.pattern.uuid.label',
     regex: '\\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\b',
-    hint: 'e.g. 550e8400-e29b-…',
+    hint: 'filter.pattern.uuid.hint',
   },
 ];
 

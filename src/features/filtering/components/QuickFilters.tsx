@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { PATTERN_LIBRARY, type QuickPattern } from '@/lib/filter/patternLibrary';
+import { useI18n } from '@/lib/i18n/I18nContext';
 
 export interface QuickFiltersProps {
   /** Apply a pattern as a regex search (one-click filter). */
@@ -13,6 +14,7 @@ const actionBtn =
 
 /** Dropdown of ready-made patterns (IPv4, MAC, e-mail, HTTP errors…). */
 export function QuickFilters({ onFilter, onExtract }: QuickFiltersProps) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -45,7 +47,7 @@ export function QuickFilters({ onFilter, onExtract }: QuickFiltersProps) {
         >
           <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
         </svg>
-        Quick filters
+        {t('filter.quick.title')}
       </button>
 
       {open && (
@@ -57,33 +59,33 @@ export function QuickFilters({ onFilter, onExtract }: QuickFiltersProps) {
             >
               <div className="flex-1 truncate">
                 <div className="truncate text-sm font-medium text-slate-700 dark:text-slate-200">
-                  {p.label}
+                  {t(p.label)}
                 </div>
                 <div className="truncate text-[11px] text-slate-400 dark:text-slate-500">
-                  {p.hint}
+                  {t(p.hint)}
                 </div>
               </div>
               <button
                 type="button"
-                aria-label={`Filter ${p.label}`}
+                aria-label={t('filter.quick.filterAria', { name: t(p.label) })}
                 onClick={() => {
                   onFilter(p);
                   setOpen(false);
                 }}
                 className={actionBtn}
               >
-                Filter
+                {t('filter.quick.filter')}
               </button>
               <button
                 type="button"
-                aria-label={`Extract ${p.label}`}
+                aria-label={t('filter.quick.extractAria', { name: t(p.label) })}
                 onClick={() => {
                   onExtract(p);
                   setOpen(false);
                 }}
                 className="rounded px-1.5 py-0.5 text-[11px] font-medium text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
               >
-                Extract
+                {t('filter.quick.extract')}
               </button>
             </div>
           ))}
