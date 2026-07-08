@@ -52,4 +52,11 @@ test('i18n: the filter bar is translated after switching to German', async ({
   await page.getByRole('button', { name: /Spalten/ }).click();
   await expect(page.getByText('Berechnete Spalte hinzufügen')).toBeVisible();
   await expect(page.getByRole('radio', { name: 'Rechnen' })).toBeVisible();
+  await page.getByRole('button', { name: /Spalten/ }).click(); // close
+
+  // Export / Share / Presets toolbar.
+  await expect(page.getByRole('button', { name: /Zeilen exportieren/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Ansicht teilen' })).toBeVisible();
+  await expect(page.getByText('Gespeicherte Ansichten')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Ansicht speichern' })).toBeVisible();
 });

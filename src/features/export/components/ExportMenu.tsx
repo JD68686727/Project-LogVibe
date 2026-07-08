@@ -9,6 +9,7 @@ import {
 } from '@/lib/export/redact';
 import { downloadBlob } from '@/utils/downloadBlob';
 import { btnSecondary } from '@/utils/controls';
+import { useI18n } from '@/lib/i18n/I18nContext';
 
 /** `server-logs.csv` → `server-logs.filtered[.redacted].<ext>` */
 function exportName(fileName: string, ext: string, redacted: boolean): string {
@@ -34,6 +35,7 @@ const checkbox =
   'h-3.5 w-3.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500/30 dark:border-slate-600 dark:bg-slate-700';
 
 export function ExportMenu({ dataset, order, columns, timeZone }: ExportMenuProps) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [redact, setRedact] = useState(false);
@@ -121,7 +123,7 @@ export function ExportMenu({ dataset, order, columns, timeZone }: ExportMenuProp
             d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
           />
         </svg>
-        Export {order.length.toLocaleString()} rows
+        {t('export.button', { n: order.length.toLocaleString() })}
       </button>
 
       {open && (
@@ -134,7 +136,7 @@ export function ExportMenu({ dataset, order, columns, timeZone }: ExportMenuProp
                 onChange={(e) => setRedact(e.target.checked)}
                 className={checkbox}
               />
-              Redact sensitive values
+              {t('export.redact')}
             </label>
             {redact && (
               <div className="mt-2 space-y-2 pl-6">
@@ -150,7 +152,7 @@ export function ExportMenu({ dataset, order, columns, timeZone }: ExportMenuProp
                         onChange={() => toggleCat(r.id)}
                         className={checkbox}
                       />
-                      {r.label}
+                      {t(r.label)}
                     </label>
                   ))}
                 </div>
@@ -163,7 +165,7 @@ export function ExportMenu({ dataset, order, columns, timeZone }: ExportMenuProp
                       onChange={() => setMode('consistent')}
                       className="text-brand-600 focus:ring-brand-500/30"
                     />
-                    Consistent (IP_1)
+                    {t('export.consistent')}
                   </label>
                   <label className="flex items-center gap-1.5">
                     <input
@@ -189,7 +191,7 @@ export function ExportMenu({ dataset, order, columns, timeZone }: ExportMenuProp
                   onChange={(e) => setDatesInZone(e.target.checked)}
                   className={checkbox}
                 />
-                Dates in{' '}
+                {t('export.datesIn')}{' '}
                 <span className="font-mono text-xs text-slate-500 dark:text-slate-400">
                   {timeZone}
                 </span>

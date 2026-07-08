@@ -130,6 +130,26 @@ export const en = {
   'column.orNumber': 'column or number',
   'column.templateAria': 'Text template',
 
+  'export.button': 'Export {n} rows',
+  'export.redact': 'Redact sensitive values',
+  'export.consistent': 'Consistent (IP_1)',
+  'export.datesIn': 'Dates in',
+  'redact.email': 'E-mail',
+  'redact.mac': 'MAC',
+  'redact.ipv6': 'IPv6',
+  'redact.ipv4': 'IPv4',
+
+  'share.view': 'Share view',
+  'share.copied': 'Link copied!',
+
+  'preset.saved': 'Saved views',
+  'preset.none': 'none yet — configure filters/chart, then save',
+  'preset.apply': 'Apply this view',
+  'preset.delete': 'Delete view {name}',
+  'preset.namePlaceholder': 'Name this view',
+  'preset.nameAria': 'View name',
+  'preset.save': 'Save view',
+
   'settings.title': 'Settings',
   'settings.appearance': 'Appearance',
   'settings.appearance.hint': 'Light, system, or dark theme',
@@ -290,6 +310,26 @@ export const de: Record<TKey, string> = {
   'column.rightOperand': 'Rechter Operand',
   'column.orNumber': 'Spalte oder Zahl',
   'column.templateAria': 'Text-Vorlage',
+
+  'export.button': '{n} Zeilen exportieren',
+  'export.redact': 'Sensible Werte anonymisieren',
+  'export.consistent': 'Konsistent (IP_1)',
+  'export.datesIn': 'Datumswerte in',
+  'redact.email': 'E-Mail',
+  'redact.mac': 'MAC',
+  'redact.ipv6': 'IPv6',
+  'redact.ipv4': 'IPv4',
+
+  'share.view': 'Ansicht teilen',
+  'share.copied': 'Link kopiert!',
+
+  'preset.saved': 'Gespeicherte Ansichten',
+  'preset.none': 'noch keine — Filter/Chart einrichten, dann speichern',
+  'preset.apply': 'Diese Ansicht anwenden',
+  'preset.delete': 'Ansicht {name} löschen',
+  'preset.namePlaceholder': 'Ansicht benennen',
+  'preset.nameAria': 'Ansichtsname',
+  'preset.save': 'Ansicht speichern',
 
   'settings.title': 'Einstellungen',
   'settings.appearance': 'Darstellung',

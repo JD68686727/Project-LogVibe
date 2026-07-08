@@ -1,4 +1,5 @@
 import type { CellValue } from '@/types/dataset';
+import type { TKey } from '@/lib/i18n/translations';
 import { PATTERN_LIBRARY } from '@/lib/filter/patternLibrary';
 
 export type RedactionMode = 'consistent' | 'token';
@@ -10,11 +11,11 @@ export type RedactionMode = 'consistent' | 'token';
  * (Hostnames / passwords aren't reliably detectable by regex and are out of
  * scope — redact a whole column for those.)
  */
-export const REDACTABLE: { id: string; label: string; token: string }[] = [
-  { id: 'email', label: 'E-mail', token: 'EMAIL' },
-  { id: 'mac', label: 'MAC', token: 'MAC' },
-  { id: 'ipv6', label: 'IPv6', token: 'IP6' },
-  { id: 'ipv4', label: 'IPv4', token: 'IP' },
+export const REDACTABLE: { id: string; label: TKey; token: string }[] = [
+  { id: 'email', label: 'redact.email', token: 'EMAIL' },
+  { id: 'mac', label: 'redact.mac', token: 'MAC' },
+  { id: 'ipv6', label: 'redact.ipv6', token: 'IP6' },
+  { id: 'ipv4', label: 'redact.ipv4', token: 'IP' },
 ];
 
 function regexFor(id: string): string {

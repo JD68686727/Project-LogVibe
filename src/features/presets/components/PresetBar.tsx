@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import type { SavedView } from '@/types/view';
+import { useI18n } from '@/lib/i18n/I18nContext';
 
 const inputCls =
   'w-40 rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200';
@@ -13,6 +14,7 @@ export interface PresetBarProps {
 
 /** Save / apply / delete named filter+chart presets for the current schema. */
 export function PresetBar({ views, onApply, onSave, onDelete }: PresetBarProps) {
+  const { t } = useI18n();
   const [name, setName] = useState('');
 
   const submit = (e: FormEvent) => {
@@ -26,12 +28,12 @@ export function PresetBar({ views, onApply, onSave, onDelete }: PresetBarProps) 
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
       <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-        Saved views
+        {t('preset.saved')}
       </span>
 
       {views.length === 0 ? (
         <span className="text-xs text-slate-400 dark:text-slate-500">
-          none yet — configure filters/chart, then save
+          {t('preset.none')}
         </span>
       ) : (
         views.map((v) => (
@@ -43,14 +45,14 @@ export function PresetBar({ views, onApply, onSave, onDelete }: PresetBarProps) 
               type="button"
               onClick={() => onApply(v)}
               className="font-medium hover:underline"
-              title="Apply this view"
+              title={t('preset.apply')}
             >
               {v.name}
             </button>
             <button
               type="button"
               onClick={() => onDelete(v.id)}
-              aria-label={`Delete view ${v.name}`}
+              aria-label={t('preset.delete', { name: v.name })}
               className="flex h-5 w-5 items-center justify-center rounded-full text-brand-400 hover:bg-brand-100 hover:text-rose-600 dark:hover:bg-brand-500/25 dark:hover:text-rose-400"
             >
               <svg
@@ -73,8 +75,8 @@ export function PresetBar({ views, onApply, onSave, onDelete }: PresetBarProps) 
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Name this view"
-          aria-label="View name"
+          placeholder={t('preset.namePlaceholder')}
+          aria-label={t('preset.nameAria')}
           className={inputCls}
         />
         <button
@@ -82,7 +84,7 @@ export function PresetBar({ views, onApply, onSave, onDelete }: PresetBarProps) 
           disabled={!name.trim()}
           className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-slate-700 dark:hover:bg-slate-600"
         >
-          Save view
+          {t('preset.save')}
         </button>
       </form>
     </div>
