@@ -209,6 +209,96 @@ export const APACHE_RULES: ConfigRule[] = [
   },
 ];
 
+/** Docker Compose / Dockerfile hardening checks (line-pattern based). */
+export const DOCKER_RULES: ConfigRule[] = [
+  {
+    id: 'docker-privileged',
+    subject: 'privileged',
+    severity: 'high',
+    title: 'Privileged container',
+    remediation: 'Remove "privileged: true"; grant only the caps you need.',
+    unsafeLine: /^\s*privileged:\s*true\b/im,
+  },
+  {
+    id: 'docker-host-network',
+    subject: 'network_mode',
+    severity: 'medium',
+    title: 'Host network mode (no network isolation)',
+    remediation: 'Use a bridge/user-defined network instead of network_mode: host.',
+    unsafeLine: /^\s*network_mode:\s*["']?host\b/im,
+  },
+  {
+    id: 'docker-host-pid',
+    subject: 'pid',
+    severity: 'medium',
+    title: 'Host PID namespace shared',
+    remediation: 'Remove pid: "host" so the container cannot see host processes.',
+    unsafeLine: /^\s*pid:\s*["']?host\b/im,
+  },
+  {
+    id: 'docker-socket-mount',
+    subject: 'docker.sock',
+    severity: 'high',
+    title: 'Docker socket mounted into container (host takeover risk)',
+    remediation: 'Do not bind-mount /var/run/docker.sock into containers.',
+    unsafeLine: /\/var\/run\/docker\.sock/i,
+  },
+  {
+    id: 'docker-latest-tag',
+    subject: 'image',
+    severity: 'low',
+    title: 'Unpinned image tag (:latest)',
+    remediation: 'Pin a specific version/digest instead of :latest.',
+    unsafeLine: /^\s*image:\s*["']?[^\s"']+:latest\b/im,
+  },
+];
+
+/** Linux firewall hardening checks — iptables(-save) and ufw. */
+export const FIREWALL_RULES: ConfigRule[] = [
+  {
+    id: 'fw-iptables-input-accept',
+    subject: 'INPUT policy',
+    severity: 'high',
+    title: 'Default INPUT policy is ACCEPT (allow-by-default)',
+    remediation: 'Set a default-deny policy: iptables -P INPUT DROP.',
+    unsafeLine: /^\s*(?:iptables\s+)?-P\s+INPUT\s+ACCEPT\b/im,
+  },
+  {
+    id: 'fw-iptables-forward-accept',
+    subject: 'FORWARD policy',
+    severity: 'medium',
+    title: 'Default FORWARD policy is ACCEPT',
+    remediation: 'Set iptables -P FORWARD DROP unless the host routes traffic.',
+    unsafeLine: /^\s*(?:iptables\s+)?-P\s+FORWARD\s+ACCEPT\b/im,
+  },
+  {
+    id: 'fw-iptables-port-any',
+    subject: 'iptables rule',
+    severity: 'high',
+    title: 'Sensitive port accepted from any source',
+    remediation: 'Restrict the rule with a -s source or firewall in front.',
+    // An ACCEPT to a sensitive/mgmt port with no -s (source) on the line.
+    unsafeLine:
+      /^(?!.*\s-s\s).*--dport\s+(?:23|3306|5432|6379|27017|9200|2375)\b.*-j\s+ACCEPT/im,
+  },
+  {
+    id: 'fw-ufw-default-allow',
+    subject: 'ufw default',
+    severity: 'high',
+    title: 'ufw default allows incoming traffic',
+    remediation: 'Set: ufw default deny incoming.',
+    unsafeLine: /^\s*(?:ufw\s+)?default\s+allow\s+incoming\b/im,
+  },
+  {
+    id: 'fw-ufw-port-any',
+    subject: 'ufw allow',
+    severity: 'high',
+    title: 'Sensitive port opened to any source',
+    remediation: 'Scope the rule: ufw allow from <trusted> to any port <port>.',
+    unsafeLine: /^\s*ufw\s+allow\b(?![^\n]*\bfrom\b)[^\n]*\b(?:23|3306|5432|6379|27017|9200|2375)\b/im,
+  },
+];
+
 /**
  * Built-in rulesets per dialect. INI/generic ship empty for now — the point is
  * the shape: adding a ruleset is pure data, no engine changes.
@@ -218,11 +308,20 @@ export const RULES_BY_SYNTAX: Record<ConfigSyntax, ConfigRule[]> = {
   apache: APACHE_RULES,
   nginx: NGINX_RULES,
   cisco: CISCO_RULES,
+  docker: DOCKER_RULES,
+  firewall: FIREWALL_RULES,
   ini: [],
   generic: [],
 };
 
-const ALL_RULES = [...SSH_RULES, ...APACHE_RULES, ...NGINX_RULES, ...CISCO_RULES];
+const ALL_RULES = [
+  ...SSH_RULES,
+  ...APACHE_RULES,
+  ...NGINX_RULES,
+  ...CISCO_RULES,
+  ...DOCKER_RULES,
+  ...FIREWALL_RULES,
+];
 
 /** Human-readable title for a rule id (across all dialects), for reports. */
 export function ruleTitle(id: string): string | undefined {

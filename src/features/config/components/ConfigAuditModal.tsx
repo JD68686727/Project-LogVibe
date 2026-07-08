@@ -66,7 +66,7 @@ export function ConfigAuditModal({ onFindings, onClose }: ConfigAuditModalProps)
   return (
     <ModalShell
       title="Config audit"
-      subtitle="Check a server config (SSH, INI…) against local hardening rules — nothing leaves your browser."
+      subtitle="Check a server config (SSH, Apache, nginx, Cisco, Docker, firewall…) against local hardening rules — nothing leaves your browser."
       testId="config-audit"
       onClose={onClose}
       footer={

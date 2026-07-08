@@ -4,10 +4,17 @@ import {
   parseIniKv,
   parseNginx,
   parseCiscoIos,
+  parseRawLines,
   detectSyntax,
 } from './parse';
 import { auditConfig, auditConfigText } from './audit';
-import { SSH_RULES, NGINX_RULES, CISCO_RULES } from './rules';
+import {
+  SSH_RULES,
+  NGINX_RULES,
+  CISCO_RULES,
+  DOCKER_RULES,
+  FIREWALL_RULES,
+} from './rules';
 
 const APACHE = `ServerRoot "/etc/httpd"
 Listen 80
@@ -203,5 +210,93 @@ describe('apache dialect', () => {
     const ids = auditConfigText('httpd.conf', hardened).findings.map((f) => f.rule);
     expect(ids).not.toContain('apache-directory-listing');
     expect(ids).not.toContain('apache-hsts-missing');
+  });
+});
+
+const DOCKER = `version: "3.8"
+services:
+  web:
+    image: nginx:latest
+    privileged: true
+    network_mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+  db:
+    image: postgres:16
+    pid: "host"`;
+
+describe('docker dialect', () => {
+  it('parses every meaningful line, keeping raw and stripping # comments', () => {
+    const entries = parseRawLines('# note\nimage: nginx:latest\n\n  privileged: true');
+    expect(entries.map((e) => e.raw)).toEqual(['image: nginx:latest', '  privileged: true']);
+  });
+
+  it('detects docker by filename or compose content', () => {
+    expect(detectSyntax('docker-compose.yml', DOCKER)).toBe('docker');
+    expect(detectSyntax('stack', DOCKER)).toBe('docker');
+  });
+
+  it('flags privileged, host network/PID, docker.sock and :latest', () => {
+    const ids = auditConfigText('docker-compose.yml', DOCKER).findings.map((f) => f.rule);
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        'docker-privileged',
+        'docker-host-network',
+        'docker-host-pid',
+        'docker-socket-mount',
+        'docker-latest-tag',
+      ]),
+    );
+  });
+
+  it('does not flag a pinned image without risky options', () => {
+    const clean = 'services:\n  app:\n    image: postgres:16\n';
+    const ids = auditConfig(parseRawLines(clean), DOCKER_RULES).map((f) => f.rule);
+    expect(ids).not.toContain('docker-latest-tag');
+    expect(ids).not.toContain('docker-privileged');
+  });
+});
+
+const IPTABLES = `*filter
+-P INPUT ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -p tcp --dport 22 -s 10.0.0.0/8 -j ACCEPT
+-A INPUT -p tcp --dport 3306 -j ACCEPT
+COMMIT`;
+
+const UFW = `ufw default allow incoming
+ufw allow 3306/tcp
+ufw allow from 10.0.0.0/8 to any port 5432`;
+
+describe('firewall dialect', () => {
+  it('detects firewall from iptables or ufw content and filenames', () => {
+    expect(detectSyntax('iptables.rules', IPTABLES)).toBe('firewall');
+    expect(detectSyntax('rules', 'ufw default allow incoming')).toBe('firewall');
+    expect(detectSyntax('rules.v4', '-A INPUT -j DROP')).toBe('firewall');
+  });
+
+  it('flags allow-by-default policy and a DB port open to any source', () => {
+    const ids = auditConfig(parseRawLines(IPTABLES), FIREWALL_RULES).map((f) => f.rule);
+    expect(ids).toEqual(
+      expect.arrayContaining(['fw-iptables-input-accept', 'fw-iptables-port-any']),
+    );
+  });
+
+  it('does not flag a port scoped with a -s source', () => {
+    const scoped = '-P INPUT DROP\n-A INPUT -p tcp --dport 3306 -s 10.0.0.0/8 -j ACCEPT';
+    const ids = auditConfig(parseRawLines(scoped), FIREWALL_RULES).map((f) => f.rule);
+    expect(ids).not.toContain('fw-iptables-port-any');
+    expect(ids).not.toContain('fw-iptables-input-accept');
+  });
+
+  it('flags ufw default allow and an unscoped port, not a from-scoped one', () => {
+    const ids = auditConfig(parseRawLines(UFW), FIREWALL_RULES).map((f) => f.rule);
+    expect(ids).toContain('fw-ufw-default-allow');
+    expect(ids).toContain('fw-ufw-port-any'); // 3306/tcp with no `from`
+    // The 5432 rule is scoped with `from 10.0.0.0/8` → the only port-any hit is 3306.
+    const portAny = auditConfig(parseRawLines(UFW), FIREWALL_RULES).find(
+      (f) => f.rule === 'fw-ufw-port-any',
+    );
+    expect(portAny?.detail).toContain('3306');
   });
 });
