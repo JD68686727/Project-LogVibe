@@ -1,6 +1,8 @@
 import { useRef } from 'react';
 import type { LoadedFile, WorkspaceMode } from '@/types/workspace';
 import { cn } from '@/utils/cn';
+import { useI18n } from '@/lib/i18n/I18nContext';
+import type { TKey } from '@/lib/i18n/translations';
 import { ACCEPTED, validateFile } from '@/features/ingestion/acceptedTypes';
 
 export interface WorkspaceBarProps {
@@ -21,9 +23,9 @@ export interface WorkspaceBarProps {
   onTailFile?: () => void;
 }
 
-const MODES: { value: WorkspaceMode; label: string }[] = [
-  { value: 'analyze', label: 'Analyze' },
-  { value: 'compare', label: 'Compare' },
+const MODES: { value: WorkspaceMode; label: TKey }[] = [
+  { value: 'analyze', label: 'workspace.mode.analyze' },
+  { value: 'compare', label: 'workspace.mode.compare' },
 ];
 
 export function WorkspaceBar({
@@ -40,6 +42,7 @@ export function WorkspaceBar({
   onAuditConfig,
   onTailFile,
 }: WorkspaceBarProps) {
+  const { t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handlePick = (fileList: FileList | null) => {
@@ -68,7 +71,10 @@ export function WorkspaceBar({
                 type="button"
                 onClick={() => onSetActive(f.id)}
                 className="flex items-center gap-2"
-                title={`${f.dataset.meta.fileName} · ${f.dataset.meta.rowCount.toLocaleString()} rows`}
+                title={t('workspace.rowsTitle', {
+                  name: f.dataset.meta.fileName,
+                  rows: f.dataset.meta.rowCount.toLocaleString(),
+                })}
               >
                 <span className="max-w-[14rem] truncate font-medium">
                   {f.dataset.meta.fileName}
@@ -86,7 +92,7 @@ export function WorkspaceBar({
               <button
                 type="button"
                 onClick={() => onRemove(f.id)}
-                aria-label={`Remove ${f.dataset.meta.fileName}`}
+                aria-label={t('workspace.remove', { name: f.dataset.meta.fileName })}
                 className="flex h-4 w-4 items-center justify-center rounded text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:text-slate-500 dark:hover:bg-rose-500/15 dark:hover:text-rose-400"
               >
                 <svg
@@ -112,7 +118,7 @@ export function WorkspaceBar({
           disabled={parsing}
           className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-500 hover:border-brand-400 hover:text-brand-600 disabled:opacity-50 dark:border-slate-600 dark:text-slate-400 dark:hover:text-brand-400"
         >
-          {parsing ? `Parsing… ${progress}%` : '+ Add file'}
+          {parsing ? t('workspace.parsing', { progress }) : t('workspace.addFile')}
         </button>
         <input
           ref={inputRef}
@@ -128,7 +134,7 @@ export function WorkspaceBar({
             onClick={onCustomLog}
             className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-500 hover:border-brand-400 hover:text-brand-600 dark:border-slate-600 dark:text-slate-400 dark:hover:text-brand-400"
           >
-            + Custom log
+            {t('workspace.customLog')}
           </button>
         )}
 
@@ -138,7 +144,7 @@ export function WorkspaceBar({
             onClick={onAuditConfig}
             className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-500 hover:border-brand-400 hover:text-brand-600 dark:border-slate-600 dark:text-slate-400 dark:hover:text-brand-400"
           >
-            + Audit config
+            {t('workspace.auditConfig')}
           </button>
         )}
 
@@ -148,7 +154,7 @@ export function WorkspaceBar({
             onClick={onTailFile}
             className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-500 hover:border-brand-400 hover:text-brand-600 dark:border-slate-600 dark:text-slate-400 dark:hover:text-brand-400"
           >
-            + Tail file (live)
+            {t('workspace.tailFile')}
           </button>
         )}
       </div>
@@ -167,7 +173,7 @@ export function WorkspaceBar({
                 : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200',
             )}
           >
-            {m.label}
+            {t(m.label)}
           </button>
         ))}
       </div>

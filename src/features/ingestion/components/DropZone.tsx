@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState, type DragEvent } from 'react';
 import type { ParseStatus } from '@/types/dataset';
 import { cn } from '@/utils/cn';
+import { useI18n } from '@/lib/i18n/I18nContext';
 import { ACCEPTED, validateFile } from '../acceptedTypes';
 
 export interface DropZoneProps {
@@ -16,6 +17,7 @@ export interface DropZoneProps {
  * through the upload control.
  */
 export function DropZone({ status, progress, onFileSelected }: DropZoneProps) {
+  const { t } = useI18n();
   const [isDragging, setIsDragging] = useState(false);
   const [rejected, setRejected] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -63,7 +65,7 @@ export function DropZone({ status, progress, onFileSelected }: DropZoneProps) {
       <div
         role="button"
         tabIndex={0}
-        aria-label="Upload a CSV or log file"
+        aria-label={t('dropzone.aria')}
         aria-busy={isParsing}
         onClick={openPicker}
         onKeyDown={(e) => {
@@ -120,7 +122,7 @@ export function DropZone({ status, progress, onFileSelected }: DropZoneProps) {
         {isParsing ? (
           <>
             <p className="text-base font-medium text-slate-700 dark:text-slate-200">
-              Parsing your file…
+              {t('dropzone.parsing')}
             </p>
             <div className="mt-4 h-2 w-56 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
               <div
@@ -135,18 +137,17 @@ export function DropZone({ status, progress, onFileSelected }: DropZoneProps) {
         ) : (
           <>
             <p className="text-base font-semibold text-slate-800 dark:text-slate-100">
-              Drop your CSV or log file here
+              {t('dropzone.title')}
             </p>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              or{' '}
+              {t('dropzone.orPrefix')}
               <span className="font-medium text-brand-600 dark:text-brand-400">
-                browse
-              </span>{' '}
-              to upload
+                {t('dropzone.browse')}
+              </span>
+              {t('dropzone.orSuffix')}
             </p>
             <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
-              {ACCEPTED.join(' · ')} — processed 100% locally, nothing leaves your
-              browser
+              {t('dropzone.privacy', { types: ACCEPTED.join(' · ') })}
             </p>
           </>
         )}

@@ -20,6 +20,29 @@ export const en = {
   'empty.samples.heading': 'Or try a sample — nothing is uploaded',
 
   'common.close': 'Close',
+  'common.clear': 'Clear',
+
+  'workspace.mode.analyze': 'Analyze',
+  'workspace.mode.compare': 'Compare',
+  'workspace.rowsTitle': '{name} · {rows} rows',
+  'workspace.remove': 'Remove {name}',
+  'workspace.parsing': 'Parsing… {progress}%',
+  'workspace.addFile': '+ Add file',
+  'workspace.customLog': '+ Custom log',
+  'workspace.auditConfig': '+ Audit config',
+  'workspace.tailFile': '+ Tail file (live)',
+
+  'dropzone.aria': 'Upload a CSV or log file',
+  'dropzone.parsing': 'Parsing your file…',
+  'dropzone.title': 'Drop your CSV or log file here',
+  'dropzone.orPrefix': 'or ',
+  'dropzone.browse': 'browse',
+  'dropzone.orSuffix': ' to upload',
+  'dropzone.privacy': '{types} — processed 100% locally, nothing leaves your browser',
+
+  'parse.failed': 'Couldn’t parse the file',
+  'parse.summary': '{rows} rows · {cols} columns · {size}',
+  'parse.truncated': ' · truncated',
 
   'settings.title': 'Settings',
   'settings.appearance': 'Appearance',
@@ -72,6 +95,29 @@ export const de: Record<TKey, string> = {
   'empty.samples.heading': 'Oder ein Beispiel testen — nichts wird hochgeladen',
 
   'common.close': 'Schließen',
+  'common.clear': 'Leeren',
+
+  'workspace.mode.analyze': 'Analysieren',
+  'workspace.mode.compare': 'Vergleichen',
+  'workspace.rowsTitle': '{name} · {rows} Zeilen',
+  'workspace.remove': '{name} entfernen',
+  'workspace.parsing': 'Wird geparst… {progress}%',
+  'workspace.addFile': '+ Datei hinzufügen',
+  'workspace.customLog': '+ Eigenes Log',
+  'workspace.auditConfig': '+ Config prüfen',
+  'workspace.tailFile': '+ Datei tailen (live)',
+
+  'dropzone.aria': 'Eine CSV- oder Log-Datei hochladen',
+  'dropzone.parsing': 'Datei wird geparst…',
+  'dropzone.title': 'CSV- oder Log-Datei hier ablegen',
+  'dropzone.orPrefix': 'oder ',
+  'dropzone.browse': 'durchsuchen',
+  'dropzone.orSuffix': ' zum Hochladen',
+  'dropzone.privacy': '{types} — 100% lokal verarbeitet, nichts verlässt deinen Browser',
+
+  'parse.failed': 'Datei konnte nicht geparst werden',
+  'parse.summary': '{rows} Zeilen · {cols} Spalten · {size}',
+  'parse.truncated': ' · gekürzt',
 
   'settings.title': 'Einstellungen',
   'settings.appearance': 'Darstellung',
