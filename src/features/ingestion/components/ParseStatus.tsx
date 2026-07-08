@@ -1,5 +1,6 @@
 import type { Dataset, ParseError, ParseStatus as Status } from '@/types/dataset';
 import { formatBytes } from '@/utils/formatBytes';
+import { useI18n } from '@/lib/i18n/I18nContext';
 
 export interface ParseStatusProps {
   status: Status;
@@ -10,11 +11,12 @@ export interface ParseStatusProps {
 
 /** Renders post-parse feedback: error list on failure, dataset summary on success. */
 export function ParseStatus({ status, dataset, errors, onClear }: ParseStatusProps) {
+  const { t } = useI18n();
   if (status === 'error') {
     return (
       <div className="mx-auto mt-4 w-full max-w-2xl rounded-lg border border-rose-200 bg-rose-50 p-3 dark:border-rose-500/30 dark:bg-rose-500/10">
         <p className="text-sm font-semibold text-rose-700 dark:text-rose-300">
-          Couldn’t parse the file
+          {t('parse.failed')}
         </p>
         <ul className="mt-1 list-inside list-disc text-xs text-rose-600 dark:text-rose-400">
           {errors.slice(0, 5).map((err, i) => (
@@ -33,9 +35,12 @@ export function ParseStatus({ status, dataset, errors, onClear }: ParseStatusPro
             {dataset.meta.fileName}
           </p>
           <p className="text-emerald-600 dark:text-emerald-400">
-            {dataset.meta.rowCount.toLocaleString()} rows · {dataset.columns.length}{' '}
-            columns · {formatBytes(dataset.meta.fileSize)}
-            {dataset.meta.truncated && ' · truncated'}
+            {t('parse.summary', {
+              rows: dataset.meta.rowCount.toLocaleString(),
+              cols: dataset.columns.length,
+              size: formatBytes(dataset.meta.fileSize),
+            })}
+            {dataset.meta.truncated && t('parse.truncated')}
           </p>
         </div>
         <button
@@ -43,7 +48,7 @@ export function ParseStatus({ status, dataset, errors, onClear }: ParseStatusPro
           onClick={onClear}
           className="rounded-lg px-3 py-1.5 text-sm font-medium text-emerald-700 hover:bg-emerald-100 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
         >
-          Clear
+          {t('common.clear')}
         </button>
       </div>
     );

@@ -18,9 +18,13 @@ test('i18n: switching to German translates the UI, and it persists', async ({
     page.getByText('Datenschutz-first, lokaler CSV- & Log-Analyzer'),
   ).toBeVisible();
 
+  // The empty-state drop zone is translated too.
+  await expect(page.getByText('CSV- oder Log-Datei hier ablegen')).toBeVisible();
+
   // The choice persists across a reload.
   await page.reload();
   await expect(
     page.getByText('Datenschutz-first, lokaler CSV- & Log-Analyzer'),
   ).toBeVisible();
+  await expect(page.getByText('CSV- oder Log-Datei hier ablegen')).toBeVisible();
 });
