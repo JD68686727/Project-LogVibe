@@ -14,6 +14,7 @@ import { useFindingAlerts } from '@/features/security/hooks/useFindingAlerts';
 import { requestNotifyPermission } from '@/lib/alert/notify';
 import { KeyboardShortcuts } from '@/features/help/components/KeyboardShortcuts';
 import { SettingsPanel } from '@/features/settings/components/SettingsPanel';
+import { useI18n } from '@/lib/i18n/I18nContext';
 import { useWorkspace } from '@/features/workspace/hooks/useWorkspace';
 import { WorkspaceBar } from '@/features/workspace/components/WorkspaceBar';
 import { useSharedView } from '@/features/sharing/hooks/useSharedView';
@@ -37,6 +38,7 @@ export function App() {
   const shared = useSharedView();
   const { theme, setTheme } = useTheme();
   const { tz, setTimezone } = useTimezone();
+  const { t } = useI18n();
   const [mode, setMode] = useState<WorkspaceMode>('analyze');
   const [showBuilder, setShowBuilder] = useState(false);
   const [showAudit, setShowAudit] = useState(false);
@@ -133,7 +135,7 @@ export function App() {
               LogVibe
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Privacy-first, local CSV &amp; log analyzer
+              {t('app.tagline')}
             </p>
           </div>
           <div className="ml-auto flex items-center gap-3">
@@ -142,8 +144,8 @@ export function App() {
             <button
               type="button"
               onClick={() => setShowSettings(true)}
-              aria-label="Settings"
-              title="Settings"
+              aria-label={t('header.settings')}
+              title={t('header.settings')}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
             >
               <svg
@@ -163,8 +165,8 @@ export function App() {
             <button
               type="button"
               onClick={() => setShowShortcuts(true)}
-              aria-label="Keyboard shortcuts"
-              title="Keyboard shortcuts (?)"
+              aria-label={t('header.shortcuts')}
+              title={`${t('header.shortcuts')} (?)`}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
             >
               ?
@@ -188,41 +190,41 @@ export function App() {
               onClear={reset}
             />
             <p className="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">
-              Unstructured log (Nginx, Apache, syslog…)?{' '}
+              {t('empty.customLog.prompt')}{' '}
               <button
                 type="button"
                 onClick={() => setShowBuilder(true)}
                 className="font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
               >
-                Build a custom log format
+                {t('empty.customLog.action')}
               </button>
             </p>
             <p className="mt-1 text-center text-sm text-slate-500 dark:text-slate-400">
-              Have a server config (SSH, INI…)?{' '}
+              {t('empty.audit.prompt')}{' '}
               <button
                 type="button"
                 onClick={() => setShowAudit(true)}
                 className="font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
               >
-                Audit it for hardening issues
+                {t('empty.audit.action')}
               </button>
             </p>
             {tail.supported && (
               <p className="mt-1 text-center text-sm text-slate-500 dark:text-slate-400">
-                Watching a log that keeps growing?{' '}
+                {t('empty.tail.prompt')}{' '}
                 <button
                   type="button"
                   onClick={() => void tail.start()}
                   className="font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
                 >
-                  Tail it live
+                  {t('empty.tail.action')}
                 </button>
               </p>
             )}
 
             <div className="mx-auto mt-8 max-w-2xl">
               <p className="text-center text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-                Or try a sample — nothing is uploaded
+                {t('empty.samples.heading')}
               </p>
               <div className="mt-3 grid gap-2 sm:grid-cols-3">
                 {SAMPLES.map((s) => (
