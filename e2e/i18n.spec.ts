@@ -18,6 +18,8 @@ test('i18n: switching to German translates the UI, and it persists', async ({
 
   // The panel and the app chrome switch to German immediately.
   await expect(panel.getByRole('heading', { name: 'Einstellungen' })).toBeVisible();
+  // Numbers follow the language: the buffer option groups as 50.000 (not 50,000).
+  await expect(panel.getByRole('option', { name: 'Letzte 50.000' })).toBeAttached();
   await page.getByRole('button', { name: 'Schließen' }).click();
   await expect(
     page.getByText('Datenschutz-first, lokaler CSV- & Log-Analyzer'),

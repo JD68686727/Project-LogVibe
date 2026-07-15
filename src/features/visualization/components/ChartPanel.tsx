@@ -2,6 +2,7 @@ import type { Dataset } from '@/types/dataset';
 import type { Aggregation, ChartType, DateBucket } from '@/types/chart';
 import { cn } from '@/utils/cn';
 import { selectCls } from '@/utils/controls';
+import { formatInt } from '@/utils/formatNumber';
 import { useI18n } from '@/lib/i18n/I18nContext';
 import type { TKey } from '@/lib/i18n/translations';
 import type { UseChartConfig } from '../hooks/useChartConfig';
@@ -158,7 +159,7 @@ export function ChartPanel({ dataset, chart }: ChartPanelProps) {
         <p className="mt-2 text-center text-xs text-slate-400 dark:text-slate-500">
           {t('chart.truncated', {
             n: result.data.length,
-            total: result.groupCount.toLocaleString(),
+            total: formatInt(result.groupCount),
           })}
         </p>
       )}

@@ -1,5 +1,6 @@
 import type { Dataset, ParseError, ParseStatus as Status } from '@/types/dataset';
 import { formatBytes } from '@/utils/formatBytes';
+import { formatInt } from '@/utils/formatNumber';
 import { useI18n } from '@/lib/i18n/I18nContext';
 
 export interface ParseStatusProps {
@@ -36,7 +37,7 @@ export function ParseStatus({ status, dataset, errors, onClear }: ParseStatusPro
           </p>
           <p className="text-emerald-600 dark:text-emerald-400">
             {t('parse.summary', {
-              rows: dataset.meta.rowCount.toLocaleString(),
+              rows: formatInt(dataset.meta.rowCount),
               cols: dataset.columns.length,
               size: formatBytes(dataset.meta.fileSize),
             })}

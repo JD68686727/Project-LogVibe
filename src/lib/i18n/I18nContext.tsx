@@ -8,7 +8,13 @@ import {
   type ReactNode,
 } from 'react';
 import type { Lang } from '@/types/i18n';
+import { setNumberLocale } from '@/utils/formatNumber';
 import { translate, type TKey } from './translations';
+
+/** BCP-47 locale for number grouping/decimals per UI language. */
+function localeFor(lang: Lang): string {
+  return lang === 'de' ? 'de-DE' : 'en-US';
+}
 
 const STORAGE_KEY = 'logvibe.lang';
 
@@ -37,6 +43,10 @@ function initialLang(): Lang {
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => initialLang());
+
+  // Mirror the number locale before children render, so formatted numbers
+  // (table, stats, counts) match the chosen language on first paint too.
+  setNumberLocale(localeFor(lang));
 
   useEffect(() => {
     document.documentElement.lang = lang;

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Theme } from '@/types/theme';
 import { LANGUAGES } from '@/types/i18n';
 import { btnSecondary } from '@/utils/controls';
+import { formatInt } from '@/utils/formatNumber';
 import { useI18n } from '@/lib/i18n/I18nContext';
 import { ModalShell } from '@/features/analysis/components/ModalShell';
 import { ThemeToggle } from '@/features/theme/components/ThemeToggle';
@@ -135,7 +136,7 @@ export function SettingsPanel({
               <option key={n} value={n}>
                 {n === 0
                   ? t('settings.tailBuffer.unlimited')
-                  : t('settings.tailBuffer.last', { n: n.toLocaleString() })}
+                  : t('settings.tailBuffer.last', { n: formatInt(n) })}
               </option>
             ))}
           </select>

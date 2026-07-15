@@ -2,6 +2,7 @@ import { cn } from '@/utils/cn';
 import type { Dataset } from '@/types/dataset';
 import type { ColumnFilter, FilterGroup } from '@/types/filter';
 import type { QuickPattern } from '@/lib/filter/patternLibrary';
+import { formatInt } from '@/utils/formatNumber';
 import { useI18n } from '@/lib/i18n/I18nContext';
 import { FilterRow } from './FilterRow';
 import { QuickFilters } from './QuickFilters';
@@ -152,8 +153,8 @@ export function FilterBar({
             }
           >
             {t('filter.rowCount', {
-              n: resultCount.toLocaleString(),
-              total: totalCount.toLocaleString(),
+              n: formatInt(resultCount),
+              total: formatInt(totalCount),
             })}
           </span>
         </div>

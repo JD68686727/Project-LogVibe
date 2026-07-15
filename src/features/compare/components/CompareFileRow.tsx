@@ -1,6 +1,7 @@
 import type { ColumnFilter } from '@/types/filter';
 import { cn } from '@/utils/cn';
 import { inputCls } from '@/utils/controls';
+import { formatInt } from '@/utils/formatNumber';
 import { useI18n } from '@/lib/i18n/I18nContext';
 import { FilterRow } from '@/features/filtering/components/FilterRow';
 import type { CompareFileItem } from '../hooks/useCompareConfig';
@@ -71,8 +72,8 @@ export function CompareFileRow({
           )}
         >
           {t('filter.rowCount', {
-            n: item.filteredRows.toLocaleString(),
-            total: item.rows.toLocaleString(),
+            n: formatInt(item.filteredRows),
+            total: formatInt(item.rows),
           })}
         </span>
 
