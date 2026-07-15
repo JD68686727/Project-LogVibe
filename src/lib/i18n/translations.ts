@@ -150,6 +150,21 @@ export const en = {
   'preset.nameAria': 'View name',
   'preset.save': 'Save view',
 
+  'table.aria': 'Data table',
+  'table.sortHint': '{name} · {type} — click to sort, Shift-click to add',
+  'table.noRows': 'No rows match',
+  'table.noRowsHint': 'Adjust or remove a filter to see results.',
+
+  'row.detailAria': 'Row detail',
+  'row.closeAria': 'Close row detail',
+  'row.title': 'Row {n}',
+  'row.position': '{pos} of {total} in view',
+  'row.notInView': 'not in the current filtered view',
+  'row.prev': 'Previous row',
+  'row.next': 'Next row',
+  'row.copy': 'Copy',
+  'row.copyField': 'Copy {name}',
+
   'settings.title': 'Settings',
   'settings.appearance': 'Appearance',
   'settings.appearance.hint': 'Light, system, or dark theme',
@@ -330,6 +345,21 @@ export const de: Record<TKey, string> = {
   'preset.namePlaceholder': 'Ansicht benennen',
   'preset.nameAria': 'Ansichtsname',
   'preset.save': 'Ansicht speichern',
+
+  'table.aria': 'Datentabelle',
+  'table.sortHint': '{name} · {type} — klicken zum Sortieren, Shift-Klick fürs Hinzufügen',
+  'table.noRows': 'Keine Zeilen passen',
+  'table.noRowsHint': 'Filter anpassen oder entfernen, um Ergebnisse zu sehen.',
+
+  'row.detailAria': 'Zeilendetails',
+  'row.closeAria': 'Zeilendetails schließen',
+  'row.title': 'Zeile {n}',
+  'row.position': '{pos} von {total} in Ansicht',
+  'row.notInView': 'nicht in der aktuellen gefilterten Ansicht',
+  'row.prev': 'Vorherige Zeile',
+  'row.next': 'Nächste Zeile',
+  'row.copy': 'Kopieren',
+  'row.copyField': '{name} kopieren',
 
   'settings.title': 'Einstellungen',
   'settings.appearance': 'Darstellung',

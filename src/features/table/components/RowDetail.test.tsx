@@ -4,6 +4,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { makeDataset } from '@/test/factory';
+import { I18nProvider } from '@/lib/i18n/I18nContext';
 import { RowDetail } from './RowDetail';
 
 const ds = makeDataset(
@@ -28,6 +29,7 @@ describe('RowDetail', () => {
         onNavigate={vi.fn()}
         onClose={vi.fn()}
       />,
+      { wrapper: I18nProvider },
     );
     const panel = screen.getByTestId('row-detail');
     expect(panel).toHaveTextContent('INFO');
@@ -45,6 +47,7 @@ describe('RowDetail', () => {
         onNavigate={onNavigate}
         onClose={vi.fn()}
       />,
+      { wrapper: I18nProvider },
     );
     await userEvent.click(screen.getByLabelText('Next row'));
     expect(onNavigate).toHaveBeenCalledWith(1);
@@ -62,6 +65,7 @@ describe('RowDetail', () => {
         onClose={onClose}
         onAddFilter={onAddFilter}
       />,
+      { wrapper: I18nProvider },
     );
     await userEvent.click(screen.getByLabelText('Filter by level'));
     expect(onAddFilter).toHaveBeenCalledWith({
