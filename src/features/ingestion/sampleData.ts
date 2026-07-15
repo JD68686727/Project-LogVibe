@@ -1,11 +1,13 @@
+import type { TKey } from '@/lib/i18n/translations';
 import serverLogs from '../../../samples/server-logs.csv?raw';
 import webAttack from '../../../samples/web-attack.csv?raw';
 import authEvents from '../../../samples/auth-events.csv?raw';
 
 export interface SampleFile {
   id: string;
-  label: string;
-  description: string;
+  /** i18n keys resolved at render. */
+  label: TKey;
+  description: TKey;
   fileName: string;
   content: string;
 }
@@ -18,22 +20,22 @@ export interface SampleFile {
 export const SAMPLES: SampleFile[] = [
   {
     id: 'server-logs',
-    label: 'Server logs',
-    description: 'HTTP requests — status, latency, endpoints',
+    label: 'sample.server-logs.label',
+    description: 'sample.server-logs.description',
     fileName: 'server-logs.csv',
     content: serverLogs,
   },
   {
     id: 'web-attack',
-    label: 'Web attack',
-    description: 'Probing traffic — try the Security scan',
+    label: 'sample.web-attack.label',
+    description: 'sample.web-attack.description',
     fileName: 'web-attack.csv',
     content: webAttack,
   },
   {
     id: 'auth-events',
-    label: 'Auth events',
-    description: 'Failed logins — brute-force demo',
+    label: 'sample.auth-events.label',
+    description: 'sample.auth-events.description',
     fileName: 'auth-events.csv',
     content: authEvents,
   },

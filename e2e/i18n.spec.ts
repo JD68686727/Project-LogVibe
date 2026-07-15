@@ -23,8 +23,10 @@ test('i18n: switching to German translates the UI, and it persists', async ({
     page.getByText('Datenschutz-first, lokaler CSV- & Log-Analyzer'),
   ).toBeVisible();
 
-  // The empty-state drop zone is translated too.
+  // The empty-state drop zone, sample cards, and timezone label are translated.
   await expect(page.getByText('CSV- oder Log-Datei hier ablegen')).toBeVisible();
+  await expect(page.getByText('Server-Logs')).toBeVisible();
+  await expect(page.getByLabel('Anzeige-Zeitzone')).toBeVisible();
 
   // The choice persists across a reload.
   await page.reload();

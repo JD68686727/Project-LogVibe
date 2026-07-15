@@ -1,5 +1,6 @@
-import { COMMON_ZONES } from '@/lib/time/timezone';
+import { COMMON_ZONES, LOCAL_TZ } from '@/lib/time/timezone';
 import { selectCls } from '@/utils/controls';
+import { useI18n } from '@/lib/i18n/I18nContext';
 
 export interface TimezoneSelectProps {
   tz: string;
@@ -8,6 +9,7 @@ export interface TimezoneSelectProps {
 
 /** Header dropdown for the display timezone (applies to dates + chart buckets). */
 export function TimezoneSelect({ tz, onChange }: TimezoneSelectProps) {
+  const { t } = useI18n();
   return (
     <div className="flex items-center gap-1.5">
       <svg
@@ -26,14 +28,14 @@ export function TimezoneSelect({ tz, onChange }: TimezoneSelectProps) {
         />
       </svg>
       <select
-        aria-label="Display timezone"
+        aria-label={t('tz.aria')}
         value={tz}
         onChange={(e) => onChange(e.target.value)}
         className={selectCls}
       >
         {COMMON_ZONES.map((z) => (
           <option key={z.id} value={z.id}>
-            {z.label}
+            {z.id === LOCAL_TZ ? t('tz.local') : z.label}
           </option>
         ))}
       </select>
