@@ -13,11 +13,13 @@ import {
   stripBom,
 } from '@/lib/csv/encoding';
 import { compilePattern, parseLogText } from '@/lib/log/regexParser';
+import { useI18n } from '@/lib/i18n/I18nContext';
+import type { TKey } from '@/lib/i18n/translations';
 import { ACCEPTED } from '../acceptedTypes';
 import { useLogPatterns } from '../hooks/useLogPatterns';
 
 interface Template {
-  label: string;
+  label: TKey;
   regex: string;
   flags: string;
   sample: string;
@@ -25,7 +27,7 @@ interface Template {
 
 const TEMPLATES: Template[] = [
   {
-    label: 'Nginx / Apache access',
+    label: 'pattern.tpl.access',
     regex:
       '^(?<ip>\\S+) \\S+ \\S+ \\[(?<time>[^\\]]+)\\] "(?<request>[^"]*)" (?<status>\\d+) (?<bytes>\\S+)(?: "(?<referer>[^"]*)" "(?<agent>[^"]*)")?',
     flags: '',
@@ -34,7 +36,7 @@ const TEMPLATES: Template[] = [
       '10.0.0.9 - - [10/Oct/2023:13:55:40 +0000] "POST /api/login HTTP/1.1" 401 64 "-" "curl/8.0"',
   },
   {
-    label: 'syslog',
+    label: 'pattern.tpl.syslog',
     regex:
       '^(?<time>\\w{3}\\s+\\d+ \\d{2}:\\d{2}:\\d{2}) (?<host>\\S+) (?<process>[^:]+): (?<message>.*)$',
     flags: '',
@@ -43,7 +45,7 @@ const TEMPLATES: Template[] = [
       'Oct 10 13:55:41 myhost cron[55]: session opened for user root',
   },
   {
-    label: 'App log (level + message)',
+    label: 'pattern.tpl.app',
     regex:
       '^(?<time>\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}[.,\\d]*)\\s+(?<level>[A-Z]+)\\s+(?<message>.*)$',
     flags: '',
@@ -53,13 +55,13 @@ const TEMPLATES: Template[] = [
   },
 ];
 
-const CHIPS: { label: string; snippet: string }[] = [
-  { label: 'Timestamp', snippet: '(?<timestamp>\\S+)' },
-  { label: 'Level', snippet: '(?<level>[A-Z]+)' },
-  { label: 'Component', snippet: '(?<component>\\S+)' },
-  { label: 'Message', snippet: '(?<message>.*)' },
-  { label: 'IP', snippet: '(?<ip>\\S+)' },
-  { label: 'Status', snippet: '(?<status>\\d+)' },
+const CHIPS: { label: TKey; snippet: string }[] = [
+  { label: 'pattern.chip.timestamp', snippet: '(?<timestamp>\\S+)' },
+  { label: 'pattern.chip.level', snippet: '(?<level>[A-Z]+)' },
+  { label: 'pattern.chip.component', snippet: '(?<component>\\S+)' },
+  { label: 'pattern.chip.message', snippet: '(?<message>.*)' },
+  { label: 'pattern.chip.ip', snippet: '(?<ip>\\S+)' },
+  { label: 'pattern.chip.status', snippet: '(?<status>\\d+)' },
 ];
 
 const PREVIEW_ROWS = 8;
@@ -79,6 +81,7 @@ export function LogPatternBuilder({
   onClose,
   onTailFile,
 }: LogPatternBuilderProps) {
+  const { t } = useI18n();
   const [sample, setSample] = useState(TEMPLATES[0].sample);
   const [regex, setRegex] = useState(TEMPLATES[0].regex);
   const [flags, setFlags] = useState(TEMPLATES[0].flags);
@@ -102,10 +105,10 @@ export function LogPatternBuilder({
     [compiled.ok, sample, regex, flags],
   );
 
-  const applyTemplate = (t: Template) => {
-    setRegex(t.regex);
-    setFlags(t.flags);
-    if (!file) setSample(t.sample);
+  const applyTemplate = (tpl: Template) => {
+    setRegex(tpl.regex);
+    setFlags(tpl.flags);
+    if (!file) setSample(tpl.sample);
     setParseError(null);
   };
 
@@ -145,7 +148,7 @@ export function LogPatternBuilder({
       const { text, encoding } = await readFileSmart(file);
       const result = parseLogText(text, { regex, flags });
       if (result.rows.length === 0) {
-        setParseError('No lines in the file matched the pattern.');
+        setParseError(t('pattern.noLinesMatched'));
         return;
       }
       onDataset(
@@ -170,30 +173,30 @@ export function LogPatternBuilder({
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-auto p-4 sm:p-8">
       <button
         type="button"
-        aria-label="Close"
+        aria-label={t('common.close')}
         onClick={onClose}
         className="fixed inset-0 bg-slate-900/40 backdrop-blur-[1px]"
       />
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Custom log format"
+        aria-label={t('pattern.title')}
         data-testid="log-pattern-builder"
         className="relative z-10 w-full max-w-3xl rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900"
       >
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">
           <div>
             <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100">
-              Custom log format
+              {t('pattern.title')}
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Map an unstructured log into columns with a named-group regex — 100% local.
+              {t('pattern.subtitle')}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('common.close')}
             className="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
           >
             ✕
@@ -203,16 +206,16 @@ export function LogPatternBuilder({
         <div className="max-h-[70vh] space-y-4 overflow-auto px-5 py-4">
           {/* Templates */}
           <section className="space-y-1.5">
-            <p className={section}>Start from a template</p>
+            <p className={section}>{t('pattern.template')}</p>
             <div className="flex flex-wrap gap-1.5">
-              {TEMPLATES.map((t) => (
+              {TEMPLATES.map((tpl) => (
                 <button
-                  key={t.label}
+                  key={tpl.label}
                   type="button"
-                  onClick={() => applyTemplate(t)}
+                  onClick={() => applyTemplate(tpl)}
                   className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 hover:border-brand-400 hover:text-brand-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-brand-500 dark:hover:text-brand-300"
                 >
-                  {t.label}
+                  {t(tpl.label)}
                 </button>
               ))}
             </div>
@@ -221,13 +224,13 @@ export function LogPatternBuilder({
           {/* Sample */}
           <section className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <p className={section}>Sample lines</p>
+              <p className={section}>{t('pattern.sample')}</p>
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 className={`${btnSecondary} px-2.5 py-1 text-xs`}
               >
-                Load from file…
+                {t('pattern.loadFile')}
               </button>
               <input
                 ref={fileRef}
@@ -242,7 +245,7 @@ export function LogPatternBuilder({
               />
             </div>
             <textarea
-              aria-label="Sample log lines"
+              aria-label={t('pattern.sampleAria')}
               value={sample}
               onChange={(e) => setSample(e.target.value)}
               spellCheck={false}
@@ -251,17 +254,17 @@ export function LogPatternBuilder({
             />
             {file && (
               <p className="text-xs text-slate-400 dark:text-slate-500">
-                File: <span className="font-medium text-slate-600 dark:text-slate-300">{file.name}</span>
+                {t('pattern.file')} <span className="font-medium text-slate-600 dark:text-slate-300">{file.name}</span>
               </p>
             )}
           </section>
 
           {/* Pattern */}
           <section className="space-y-1.5">
-            <p className={section}>Pattern</p>
+            <p className={section}>{t('pattern.pattern')}</p>
             <textarea
               ref={patternRef}
-              aria-label="Log pattern regex"
+              aria-label={t('pattern.regexAria')}
               value={regex}
               onChange={(e) => setRegex(e.target.value)}
               spellCheck={false}
@@ -272,7 +275,7 @@ export function LogPatternBuilder({
               )}
             />
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-xs text-slate-400 dark:text-slate-500">Add field:</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">{t('pattern.addField')}</span>
               {CHIPS.map((c) => (
                 <button
                   key={c.label}
@@ -281,13 +284,13 @@ export function LogPatternBuilder({
                   onClick={() => insertChip(c.snippet)}
                   className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-medium text-brand-700 hover:bg-brand-100 dark:bg-brand-500/15 dark:text-brand-300 dark:hover:bg-brand-500/25"
                 >
-                  + {c.label}
+                  + {t(c.label)}
                 </button>
               ))}
               <span className="ml-auto flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
-                flags
+                {t('pattern.flags')}
                 <input
-                  aria-label="Regex flags"
+                  aria-label={t('pattern.flagsAria')}
                   value={flags}
                   onChange={(e) => setFlags(e.target.value)}
                   spellCheck={false}
@@ -298,7 +301,7 @@ export function LogPatternBuilder({
             {compiled.ok ? (
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-xs text-slate-400 dark:text-slate-500">
-                  Columns:
+                  {t('pattern.columns')}
                 </span>
                 {compiled.fields.map((f, i) => (
                   <span
@@ -323,10 +326,13 @@ export function LogPatternBuilder({
           {/* Preview */}
           <section className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <p className={section}>Preview</p>
+              <p className={section}>{t('pattern.preview')}</p>
               {preview && (
                 <p className="text-xs text-slate-400 dark:text-slate-500">
-                  {preview.matched} matched · {preview.unmatched} unmatched
+                  {t('pattern.previewCount', {
+                    m: preview.matched,
+                    u: preview.unmatched,
+                  })}
                 </p>
               )}
             </div>
@@ -367,22 +373,20 @@ export function LogPatternBuilder({
               </div>
             ) : (
               <p className="rounded-lg border border-dashed border-slate-200 px-3 py-4 text-center text-xs text-slate-400 dark:border-slate-700 dark:text-slate-500">
-                {compiled.ok
-                  ? 'No sample lines matched yet — adjust the pattern or paste a sample.'
-                  : 'Fix the pattern to see a preview.'}
+                {compiled.ok ? t('pattern.noMatch') : t('pattern.fixPattern')}
               </p>
             )}
           </section>
 
           {/* Presets */}
           <section className="space-y-1.5">
-            <p className={section}>Saved patterns</p>
+            <p className={section}>{t('pattern.savedPatterns')}</p>
             <div className="flex gap-2">
               <input
-                aria-label="Pattern name"
+                aria-label={t('pattern.nameAria')}
                 value={presetName}
                 onChange={(e) => setPresetName(e.target.value)}
-                placeholder="e.g. Nginx Access Log"
+                placeholder={t('pattern.namePlaceholder')}
                 className={cn(inputCls, 'flex-1')}
               />
               <button
@@ -394,7 +398,7 @@ export function LogPatternBuilder({
                 }}
                 className={cn(btnSecondary, 'disabled:opacity-40')}
               >
-                Save
+                {t('pattern.save')}
               </button>
             </div>
             {presets.patterns.length > 0 && (
@@ -411,10 +415,10 @@ export function LogPatternBuilder({
                     <button
                       type="button"
                       onClick={() => presets.remove(p.id)}
-                      aria-label={`Delete ${p.name}`}
+                      aria-label={t('pattern.delete', { name: p.name })}
                       className="text-xs font-medium text-slate-400 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-400"
                     >
-                      Delete
+                      {t('pattern.deleteText')}
                     </button>
                   </li>
                 ))}
@@ -428,14 +432,14 @@ export function LogPatternBuilder({
             {parseError ? (
               <span className="font-medium text-rose-600 dark:text-rose-400">{parseError}</span>
             ) : file ? (
-              `Ready to parse ${file.name}`
+              t('pattern.ready', { name: file.name })
             ) : (
-              'Load a file to parse, then click Parse.'
+              t('pattern.loadHint')
             )}
           </p>
           <div className="flex items-center gap-2">
             <button type="button" onClick={onClose} className={btnSecondary}>
-              Cancel
+              {t('pattern.cancel')}
             </button>
             {onTailFile && (
               <button
@@ -446,9 +450,9 @@ export function LogPatternBuilder({
                   onClose();
                 }}
                 className={cn(btnSecondary, 'disabled:cursor-not-allowed disabled:opacity-40')}
-                title="Pick a file and stream new lines with this pattern"
+                title={t('pattern.tailTitle')}
               >
-                Tail live
+                {t('pattern.tailLive')}
               </button>
             )}
             <button
@@ -457,7 +461,7 @@ export function LogPatternBuilder({
               onClick={() => void handleParse()}
               className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {busy ? 'Parsing…' : 'Parse file'}
+              {busy ? t('pattern.parsing') : t('pattern.parseFile')}
             </button>
           </div>
         </div>
