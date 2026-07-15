@@ -3,6 +3,7 @@ import type { ColumnDistribution } from '@/types/stats';
 import { seriesColor } from '@/utils/chartColors';
 import { formatNumber } from '@/utils/formatNumber';
 import { formatTimestamp } from '@/lib/time/timezone';
+import { useI18n } from '@/lib/i18n/I18nContext';
 import {
   binBounds,
   categoricalFilter,
@@ -35,13 +36,14 @@ export function DistributionDetail({
   onPick,
   tz,
 }: DistributionDetailProps) {
+  const { t } = useI18n();
   const display = (value: string) =>
     column.type === 'date' && tz ? formatTimestamp(value, tz) : value;
 
   if (dist.kind === 'empty') {
     return (
       <p className="w-48 text-sm text-slate-400 dark:text-slate-500">
-        No values in {column.name}.
+        {t('dist.empty', { name: column.name })}
       </p>
     );
   }
@@ -50,7 +52,7 @@ export function DistributionDetail({
     const maxBin = Math.max(...dist.bins, 1);
     return (
       <div data-testid="distribution-detail" className="w-72">
-        <p className={heading}>{column.name} · distribution</p>
+        <p className={heading}>{t('dist.numericTitle', { name: column.name })}</p>
         <div className="flex h-28 items-end gap-1">
           {dist.bins.map((count, i) => {
             const { lo, hi } = binBounds(dist, i);
@@ -60,7 +62,11 @@ export function DistributionDetail({
                 type="button"
                 onClick={() => onPick(numericBinFilter(column.key, dist, i))}
                 title={`${formatNumber(lo)} – ${formatNumber(hi)}: ${formatNumber(count)}`}
-                aria-label={`Filter ${column.name} ${formatNumber(lo)} to ${formatNumber(hi)}`}
+                aria-label={t('dist.filterRange', {
+                  name: column.name,
+                  lo: formatNumber(lo),
+                  hi: formatNumber(hi),
+                })}
                 className="group flex h-full flex-1 items-end"
               >
                 <span
@@ -75,7 +81,7 @@ export function DistributionDetail({
           <span>{formatNumber(dist.min)}</span>
           <span>{formatNumber(dist.max)}</span>
         </div>
-        <p className={hint}>Click a bar to filter to that range</p>
+        <p className={hint}>{t('dist.hintRange')}</p>
       </div>
     );
   }
@@ -83,14 +89,14 @@ export function DistributionDetail({
   const { top, othersCount } = dist;
   return (
     <div data-testid="distribution-detail" className="w-72">
-      <p className={heading}>{column.name} · top values</p>
+      <p className={heading}>{t('dist.topTitle', { name: column.name })}</p>
       <ul className="space-y-0.5">
-        {top.map((t, i) => (
-          <li key={t.value}>
+        {top.map((tv, i) => (
+          <li key={tv.value}>
             <button
               type="button"
-              onClick={() => onPick(categoricalFilter(column.key, column.type, t.value))}
-              aria-label={`Filter ${column.name} = ${display(t.value)}`}
+              onClick={() => onPick(categoricalFilter(column.key, column.type, tv.value))}
+              aria-label={t('dist.filterEq', { name: column.name, value: display(tv.value) })}
               className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-slate-50 dark:hover:bg-slate-800"
             >
               <span
@@ -98,10 +104,10 @@ export function DistributionDetail({
                 style={{ backgroundColor: seriesColor(i) }}
               />
               <span className="flex-1 truncate text-sm text-slate-700 dark:text-slate-200">
-                {display(t.value)}
+                {display(tv.value)}
               </span>
               <span className="font-mono text-xs tabular-nums text-slate-400 dark:text-slate-500">
-                {formatNumber(t.count)}
+                {formatNumber(tv.count)}
               </span>
             </button>
           </li>
@@ -109,14 +115,14 @@ export function DistributionDetail({
         {othersCount > 0 && (
           <li className="flex items-center gap-2 px-2 py-1 text-sm text-slate-400 dark:text-slate-500">
             <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-slate-300 dark:bg-slate-600" />
-            <span className="flex-1 truncate">others</span>
+            <span className="flex-1 truncate">{t('dist.others')}</span>
             <span className="font-mono text-xs tabular-nums">
               {formatNumber(othersCount)}
             </span>
           </li>
         )}
       </ul>
-      <p className={hint}>Click a value to filter</p>
+      <p className={hint}>{t('dist.hintValue')}</p>
     </div>
   );
 }

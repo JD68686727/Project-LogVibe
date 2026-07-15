@@ -2,29 +2,31 @@ import type { Dataset } from '@/types/dataset';
 import type { Aggregation, ChartType, DateBucket } from '@/types/chart';
 import { cn } from '@/utils/cn';
 import { selectCls } from '@/utils/controls';
+import { useI18n } from '@/lib/i18n/I18nContext';
+import type { TKey } from '@/lib/i18n/translations';
 import type { UseChartConfig } from '../hooks/useChartConfig';
 import { ChartView } from './ChartView';
 
-const CHART_TYPES: { value: ChartType; label: string }[] = [
-  { value: 'bar', label: 'Bar' },
-  { value: 'line', label: 'Line' },
-  { value: 'pie', label: 'Pie' },
+const CHART_TYPES: { value: ChartType; label: TKey }[] = [
+  { value: 'bar', label: 'chart.type.bar' },
+  { value: 'line', label: 'chart.type.line' },
+  { value: 'pie', label: 'chart.type.pie' },
 ];
 
-const AGGREGATIONS: { value: Aggregation; label: string }[] = [
-  { value: 'count', label: 'Count' },
-  { value: 'sum', label: 'Sum' },
-  { value: 'avg', label: 'Average' },
-  { value: 'min', label: 'Min' },
-  { value: 'max', label: 'Max' },
+const AGGREGATIONS: { value: Aggregation; label: TKey }[] = [
+  { value: 'count', label: 'agg.count' },
+  { value: 'sum', label: 'agg.sum' },
+  { value: 'avg', label: 'agg.avg' },
+  { value: 'min', label: 'agg.min' },
+  { value: 'max', label: 'agg.max' },
 ];
 
-const BUCKETS: { value: DateBucket; label: string }[] = [
-  { value: 'none', label: 'No bucket' },
-  { value: 'hour', label: 'By hour' },
-  { value: 'day', label: 'By day' },
-  { value: 'week', label: 'By week' },
-  { value: 'month', label: 'By month' },
+const BUCKETS: { value: DateBucket; label: TKey }[] = [
+  { value: 'none', label: 'chart.bucket.none' },
+  { value: 'hour', label: 'chart.bucket.hour' },
+  { value: 'day', label: 'chart.bucket.day' },
+  { value: 'week', label: 'chart.bucket.week' },
+  { value: 'month', label: 'chart.bucket.month' },
 ];
 
 export interface ChartPanelProps {
@@ -34,6 +36,7 @@ export interface ChartPanelProps {
 }
 
 export function ChartPanel({ dataset, chart }: ChartPanelProps) {
+  const { t } = useI18n();
   const {
     config,
     numericColumns,
@@ -53,10 +56,13 @@ export function ChartPanel({ dataset, chart }: ChartPanelProps) {
     config.measureKey != null
       ? dataset.columns[dataset.columnIndex[config.measureKey]]
       : undefined;
-  const aggLabel = AGGREGATIONS.find((a) => a.value === config.aggregation)?.label;
+  const aggKey = AGGREGATIONS.find((a) => a.value === config.aggregation)?.label;
   const valueLabel = measureDisabled
-    ? 'Count'
-    : `${aggLabel} of ${measureCol?.name ?? 'value'}`;
+    ? t('agg.count')
+    : t('chart.valueLabel', {
+        agg: aggKey ? t(aggKey) : '',
+        name: measureCol?.name ?? t('chart.valueFallback'),
+      });
 
   const truncated = result.data.length < result.groupCount;
 
@@ -64,29 +70,29 @@ export function ChartPanel({ dataset, chart }: ChartPanelProps) {
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 dark:border-slate-700 dark:bg-slate-800">
-          {CHART_TYPES.map((t) => (
+          {CHART_TYPES.map((ct) => (
             <button
-              key={t.value}
+              key={ct.value}
               type="button"
-              onClick={() => setType(t.value)}
+              onClick={() => setType(ct.value)}
               className={cn(
                 'rounded-md px-3 py-1 text-sm font-medium transition-colors',
-                config.type === t.value
+                config.type === ct.value
                   ? 'bg-white text-brand-700 shadow-sm dark:bg-slate-700 dark:text-brand-300'
                   : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200',
               )}
             >
-              {t.label}
+              {t(ct.label)}
             </button>
           ))}
         </div>
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            Group by
+            {t('chart.groupBy')}
           </label>
           <select
-            aria-label="Group by column"
+            aria-label={t('chart.groupByAria')}
             value={config.dimensionKey}
             onChange={(e) => setDimension(e.target.value)}
             className={selectCls}
@@ -100,41 +106,41 @@ export function ChartPanel({ dataset, chart }: ChartPanelProps) {
 
           {dimensionIsDate && (
             <select
-              aria-label="Date bucket"
+              aria-label={t('chart.dateBucket')}
               value={config.bucket ?? 'none'}
               onChange={(e) => setBucket(e.target.value as DateBucket)}
               className={selectCls}
             >
               {BUCKETS.map((b) => (
                 <option key={b.value} value={b.value}>
-                  {b.label}
+                  {t(b.label)}
                 </option>
               ))}
             </select>
           )}
 
           <select
-            aria-label="Aggregation"
+            aria-label={t('chart.aggregation')}
             value={config.aggregation}
             onChange={(e) => setAggregation(e.target.value as Aggregation)}
             className={selectCls}
           >
             {AGGREGATIONS.map((a) => (
               <option key={a.value} value={a.value}>
-                {a.label}
+                {t(a.label)}
               </option>
             ))}
           </select>
 
           <select
-            aria-label="Measure column"
+            aria-label={t('chart.measure')}
             value={config.measureKey ?? ''}
             onChange={(e) => setMeasure(e.target.value)}
             disabled={measureDisabled || noNumeric}
             className={cn(selectCls, (measureDisabled || noNumeric) && 'opacity-40')}
           >
             {noNumeric ? (
-              <option value="">— no numeric columns —</option>
+              <option value="">{t('chart.noNumeric')}</option>
             ) : (
               numericColumns.map((c) => (
                 <option key={c.key} value={c.key}>
@@ -150,8 +156,10 @@ export function ChartPanel({ dataset, chart }: ChartPanelProps) {
 
       {truncated && (
         <p className="mt-2 text-center text-xs text-slate-400 dark:text-slate-500">
-          Showing top {result.data.length} of {result.groupCount.toLocaleString()}{' '}
-          groups
+          {t('chart.truncated', {
+            n: result.data.length,
+            total: result.groupCount.toLocaleString(),
+          })}
         </p>
       )}
     </div>

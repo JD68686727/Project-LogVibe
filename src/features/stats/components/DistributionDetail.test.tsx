@@ -4,6 +4,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ColumnDistribution } from '@/types/stats';
+import { I18nProvider } from '@/lib/i18n/I18nContext';
 import { DistributionDetail } from './DistributionDetail';
 
 const numeric: ColumnDistribution = {
@@ -32,6 +33,7 @@ describe('DistributionDetail', () => {
         dist={numeric}
         onPick={onPick}
       />,
+      { wrapper: I18nProvider },
     );
     await userEvent.click(
       screen.getByRole('button', { name: 'Filter latency 0 to 10' }),
@@ -52,6 +54,7 @@ describe('DistributionDetail', () => {
         dist={categorical}
         onPick={onPick}
       />,
+      { wrapper: I18nProvider },
     );
     await userEvent.click(
       screen.getByRole('button', { name: 'Filter level = INFO' }),
@@ -70,6 +73,7 @@ describe('DistributionDetail', () => {
         dist={categorical}
         onPick={vi.fn()}
       />,
+      { wrapper: I18nProvider },
     );
     // Two value buttons (INFO, WARN); "others" is plain text, not a button.
     expect(screen.getAllByRole('button')).toHaveLength(2);

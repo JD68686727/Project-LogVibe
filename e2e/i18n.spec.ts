@@ -49,16 +49,21 @@ test('i18n: the filter bar is translated after switching to German', async ({
   await expect(page.getByRole('button', { name: '+ Filter hinzufügen' })).toBeVisible();
 
   // Column manager is translated too.
-  await page.getByRole('button', { name: /Spalten/ }).click();
+  await page.getByRole('button', { name: /Spalten \d/ }).click();
   await expect(page.getByText('Berechnete Spalte hinzufügen')).toBeVisible();
   await expect(page.getByRole('radio', { name: 'Rechnen' })).toBeVisible();
-  await page.getByRole('button', { name: /Spalten/ }).click(); // close
+  await page.getByRole('button', { name: /Spalten \d/ }).click(); // close
 
   // Export / Share / Presets toolbar.
   await expect(page.getByRole('button', { name: /Zeilen exportieren/ })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Ansicht teilen' })).toBeVisible();
   await expect(page.getByText('Gespeicherte Ansichten')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Ansicht speichern' })).toBeVisible();
+
+  // Analysis panels: chart controls, stats + pivot headers.
+  await expect(page.getByText('Gruppieren nach')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Spaltenstatistik/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Pivot-Tabelle/ })).toBeVisible();
 
   // Row detail drawer is translated.
   await page.getByText('2026-06-19 08:01:12').click();

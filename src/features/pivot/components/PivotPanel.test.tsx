@@ -6,6 +6,7 @@ import userEvent from '@testing-library/user-event';
 import type { Dataset } from '@/types/dataset';
 import type { NewFilter } from '@/lib/stats/distributionFilter';
 import { makeDataset, allRows } from '@/test/factory';
+import { I18nProvider } from '@/lib/i18n/I18nContext';
 import { usePivotConfig } from '../hooks/usePivotConfig';
 import { PivotPanel } from './PivotPanel';
 
@@ -31,12 +32,14 @@ function Harness({
 }) {
   const pivot = usePivotConfig(dataset);
   return (
-    <PivotPanel
-      dataset={dataset}
-      order={allRows(dataset)}
-      pivot={pivot}
-      onAddFilter={onAddFilter}
-    />
+    <I18nProvider>
+      <PivotPanel
+        dataset={dataset}
+        order={allRows(dataset)}
+        pivot={pivot}
+        onAddFilter={onAddFilter}
+      />
+    </I18nProvider>
   );
 }
 
