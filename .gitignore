@@ -18,6 +18,12 @@ dist-ssr
 /blob-report
 /.cache
 
+# Claude Code local config
+.claude/
+
+# Local dev tooling: one-off screenshot generators + their generated images
+scripts/
+
 # Editor
 .vscode/*
 !.vscode/extensions.json
