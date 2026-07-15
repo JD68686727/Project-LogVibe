@@ -80,7 +80,7 @@ export function StatsPanel({ dataset, order, onAddFilter, timeZone }: StatsPanel
         <span className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
           {t('stats.summary', {
             cols: dataset.columns.length,
-            rows: order.length.toLocaleString(),
+            rows: fmt(order.length, 0),
           })}
           <svg
             xmlns="http://www.w3.org/2000/svg"

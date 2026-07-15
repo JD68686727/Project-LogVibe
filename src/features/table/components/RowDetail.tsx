@@ -4,6 +4,7 @@ import type { CellValue, ColumnType, Dataset } from '@/types/dataset';
 import { cn } from '@/utils/cn';
 import { categoricalFilter, type NewFilter } from '@/lib/stats/distributionFilter';
 import { useI18n } from '@/lib/i18n/I18nContext';
+import { formatInt } from '@/utils/formatNumber';
 import { formatCell } from '../utils/formatCell';
 
 const TYPE_BADGE: Record<ColumnType, string> = {
@@ -91,13 +92,13 @@ export function RowDetail({
         <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-              {t('row.title', { n: (rowIdx + 1).toLocaleString() })}
+              {t('row.title', { n: formatInt(rowIdx + 1) })}
             </span>
             <span className="text-xs text-slate-400 dark:text-slate-500">
               {inView
                 ? t('row.position', {
-                    pos: (pos + 1).toLocaleString(),
-                    total: order.length.toLocaleString(),
+                    pos: formatInt(pos + 1),
+                    total: formatInt(order.length),
                   })
                 : t('row.notInView')}
             </span>

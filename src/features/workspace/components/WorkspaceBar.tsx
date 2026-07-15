@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import type { LoadedFile, WorkspaceMode } from '@/types/workspace';
 import { cn } from '@/utils/cn';
+import { formatInt } from '@/utils/formatNumber';
 import { useI18n } from '@/lib/i18n/I18nContext';
 import type { TKey } from '@/lib/i18n/translations';
 import { ACCEPTED, validateFile } from '@/features/ingestion/acceptedTypes';
@@ -73,14 +74,14 @@ export function WorkspaceBar({
                 className="flex items-center gap-2"
                 title={t('workspace.rowsTitle', {
                   name: f.dataset.meta.fileName,
-                  rows: f.dataset.meta.rowCount.toLocaleString(),
+                  rows: formatInt(f.dataset.meta.rowCount),
                 })}
               >
                 <span className="max-w-[14rem] truncate font-medium">
                   {f.dataset.meta.fileName}
                 </span>
                 <span className="text-xs text-slate-400 dark:text-slate-500">
-                  {f.dataset.meta.rowCount.toLocaleString()}
+                  {formatInt(f.dataset.meta.rowCount)}
                 </span>
                 {f.dataset.meta.encoding &&
                   f.dataset.meta.encoding !== 'utf-8' && (

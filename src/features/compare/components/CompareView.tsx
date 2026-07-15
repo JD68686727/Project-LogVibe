@@ -4,6 +4,7 @@ import type { LoadedFile } from '@/types/workspace';
 import { cn } from '@/utils/cn';
 import { selectCls } from '@/utils/controls';
 import { DEFAULT_TZ } from '@/lib/time/timezone';
+import { formatInt } from '@/utils/formatNumber';
 import { useI18n } from '@/lib/i18n/I18nContext';
 import type { TKey } from '@/lib/i18n/translations';
 import { useCompareConfig } from '../hooks/useCompareConfig';
@@ -222,7 +223,7 @@ export function CompareView({ files, timeZone = DEFAULT_TZ }: CompareViewProps) 
             <p className="mt-2 text-center text-xs text-slate-400 dark:text-slate-500">
               {t('compare.truncated', {
                 n: result.data.length,
-                total: result.groupCount.toLocaleString(),
+                total: formatInt(result.groupCount),
               })}
             </p>
           )}

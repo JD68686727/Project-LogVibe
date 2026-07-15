@@ -6,6 +6,7 @@ import { SECURITY_PROFILES } from '@/lib/security/profiles';
 import { makeCellRedactor } from '@/lib/export/redact';
 import { downloadBlob } from '@/utils/downloadBlob';
 import { btnSecondary } from '@/utils/controls';
+import { formatInt } from '@/utils/formatNumber';
 import { useI18n } from '@/lib/i18n/I18nContext';
 import type { TKey } from '@/lib/i18n/translations';
 import { ModalShell } from '@/features/analysis/components/ModalShell';
@@ -79,11 +80,11 @@ export function SecurityScanModal({
           <div className="flex flex-wrap items-center gap-3">
             <p className="text-xs text-slate-400 dark:text-slate-500">
               {scanning
-                ? t('security.scanning', { n: order.length.toLocaleString() })
+                ? t('security.scanning', { n: formatInt(order.length) })
                 : findings.length > 0
                   ? t('security.summary', {
                       n: findings.length,
-                      rows: order.length.toLocaleString(),
+                      rows: formatInt(order.length),
                     })
                   : t('security.none')}
             </p>
