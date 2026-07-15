@@ -8,12 +8,14 @@ import { selectCls } from '@/utils/controls';
 import { formatNumber as fmt } from '@/utils/formatNumber';
 import { computePivot } from '@/lib/pivot/computePivot';
 import { categoricalFilter, type NewFilter } from '@/lib/stats/distributionFilter';
+import { useI18n } from '@/lib/i18n/I18nContext';
+import type { TKey } from '@/lib/i18n/translations';
 import type { UsePivotConfig } from '../hooks/usePivotConfig';
 
-const AGGREGATIONS: { value: PivotAggregation; label: string }[] = [
-  { value: 'count', label: 'Count' },
-  { value: 'sum', label: 'Sum' },
-  { value: 'avg', label: 'Average' },
+const AGGREGATIONS: { value: PivotAggregation; label: TKey }[] = [
+  { value: 'count', label: 'agg.count' },
+  { value: 'sum', label: 'agg.sum' },
+  { value: 'avg', label: 'agg.avg' },
 ];
 
 export interface PivotPanelProps {
@@ -51,6 +53,7 @@ export function PivotPanel({
   pivot,
   onAddFilter,
 }: PivotPanelProps) {
+  const { t } = useI18n();
   const [expanded, setExpanded] = useState(false);
   const {
     config,
@@ -80,11 +83,13 @@ export function PivotPanel({
     config.measureKey != null
       ? dataset.columns[dataset.columnIndex[config.measureKey]]
       : undefined;
+  const aggKey = AGGREGATIONS.find((a) => a.value === config.aggregation)?.label;
   const valueLabel = measureDisabled
-    ? 'Count'
-    : `${AGGREGATIONS.find((a) => a.value === config.aggregation)?.label} of ${
-        measureCol?.name ?? 'value'
-      }`;
+    ? t('agg.count')
+    : t('chart.valueLabel', {
+        agg: aggKey ? t(aggKey) : '',
+        name: measureCol?.name ?? t('chart.valueFallback'),
+      });
 
   const handleCell = (rowVal: string, colVal: string, ri: number, ci: number) => {
     const rt = colType(config.rowKey);
@@ -118,7 +123,7 @@ export function PivotPanel({
         className={headBtn}
       >
         <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-          Pivot table
+          {t('pivot.title')}
         </span>
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -138,10 +143,10 @@ export function PivotPanel({
         <div className="border-t border-slate-100 dark:border-slate-800">
           <div className="flex flex-wrap items-center gap-2 px-4 py-3">
             <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
-              Rows
+              {t('pivot.rows')}
             </label>
             <select
-              aria-label="Pivot rows"
+              aria-label={t('pivot.rowsAria')}
               value={config.rowKey ?? ''}
               onChange={(e) => setRow(e.target.value)}
               className={selectCls}
@@ -156,20 +161,20 @@ export function PivotPanel({
               <label className="flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
                 <input
                   type="checkbox"
-                  aria-label="Bucket rows"
+                  aria-label={t('pivot.bucketRows')}
                   checked={config.rowBucket === true}
                   onChange={(e) => setRowBucket(e.target.checked)}
                   className="h-3.5 w-3.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500/30 dark:border-slate-600 dark:bg-slate-700"
                 />
-                Bucket
+                {t('pivot.bucket')}
               </label>
             )}
 
             <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
-              Columns
+              {t('pivot.columns')}
             </label>
             <select
-              aria-label="Pivot columns"
+              aria-label={t('pivot.colsAria')}
               value={config.colKey ?? ''}
               onChange={(e) => setCol(e.target.value)}
               className={selectCls}
@@ -184,39 +189,39 @@ export function PivotPanel({
               <label className="flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
                 <input
                   type="checkbox"
-                  aria-label="Bucket columns"
+                  aria-label={t('pivot.bucketCols')}
                   checked={config.colBucket === true}
                   onChange={(e) => setColBucket(e.target.checked)}
                   className="h-3.5 w-3.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500/30 dark:border-slate-600 dark:bg-slate-700"
                 />
-                Bucket
+                {t('pivot.bucket')}
               </label>
             )}
 
             <span className="mx-1 h-5 w-px bg-slate-200 dark:bg-slate-700" />
 
             <select
-              aria-label="Pivot aggregation"
+              aria-label={t('pivot.aggAria')}
               value={config.aggregation}
               onChange={(e) => setAggregation(e.target.value as PivotAggregation)}
               className={selectCls}
             >
               {AGGREGATIONS.map((a) => (
                 <option key={a.value} value={a.value}>
-                  {a.label}
+                  {t(a.label)}
                 </option>
               ))}
             </select>
 
             <select
-              aria-label="Pivot measure column"
+              aria-label={t('pivot.measureAria')}
               value={config.measureKey ?? ''}
               onChange={(e) => setMeasure(e.target.value)}
               disabled={measureDisabled || noNumeric}
               className={cn(selectCls, (measureDisabled || noNumeric) && 'opacity-40')}
             >
               {noNumeric ? (
-                <option value="">— no numeric columns —</option>
+                <option value="">{t('chart.noNumeric')}</option>
               ) : (
                 numericColumns.map((c) => (
                   <option key={c.key} value={c.key}>
@@ -240,7 +245,7 @@ export function PivotPanel({
                         </th>
                       ))}
                       <th className={cn(colHead, 'text-brand-700 dark:text-brand-300')}>
-                        Total
+                        {t('pivot.total')}
                       </th>
                     </tr>
                   </thead>
@@ -266,7 +271,7 @@ export function PivotPanel({
                                   <button
                                     type="button"
                                     onClick={() => handleCell(rv, cv, ri, ci)}
-                                    aria-label={`Filter ${rv} × ${cv}`}
+                                    aria-label={t('pivot.filterCell', { row: rv, col: cv })}
                                     className="block w-full px-3 py-1.5 text-right hover:ring-2 hover:ring-inset hover:ring-brand-500"
                                   >
                                     {fmt(value)}
@@ -289,7 +294,7 @@ export function PivotPanel({
                   <tfoot>
                     <tr className="border-t-2 border-slate-200 dark:border-slate-700">
                       <th className={cn(rowHead, 'font-semibold text-brand-700 dark:text-brand-300')}>
-                        Total
+                        {t('pivot.total')}
                       </th>
                       {result.colTotals.map((t, ci) => (
                         <td
@@ -307,13 +312,13 @@ export function PivotPanel({
                 </table>
               </div>
               <p className="px-4 py-2 text-[11px] text-slate-400 dark:text-slate-500">
-                {capped && 'Top 20 values per axis; the rest are grouped as (others). '}
-                {onAddFilter && 'Click a cell to filter to that row × column.'}
+                {capped && t('pivot.capped')}
+                {onAddFilter && t('pivot.clickHint')}
               </p>
             </>
           ) : (
             <p className="border-t border-slate-100 px-4 py-6 text-center text-sm text-slate-400 dark:border-slate-800 dark:text-slate-500">
-              No rows with both dimensions present.
+              {t('pivot.empty')}
             </p>
           )}
         </div>

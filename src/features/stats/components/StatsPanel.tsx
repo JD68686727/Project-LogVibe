@@ -4,6 +4,7 @@ import type { Dataset, ColumnType } from '@/types/dataset';
 import type { ColumnFilter } from '@/types/filter';
 import { cn } from '@/utils/cn';
 import { formatNumber as fmt } from '@/utils/formatNumber';
+import { useI18n } from '@/lib/i18n/I18nContext';
 import { computeColumnDistributions } from '@/lib/stats/distribution';
 import { Popover } from '@/components/Popover';
 import { useColumnStats } from '../hooks/useColumnStats';
@@ -30,6 +31,7 @@ export interface StatsPanelProps {
 const numCell = 'px-3 py-2 text-right font-mono tabular-nums text-slate-600 dark:text-slate-300';
 
 export function StatsPanel({ dataset, order, onAddFilter, timeZone }: StatsPanelProps) {
+  const { t } = useI18n();
   const [expanded, setExpanded] = useState(false);
   const [open, setOpen] = useState<{ key: string; anchor: HTMLElement } | null>(
     null,
@@ -73,10 +75,13 @@ export function StatsPanel({ dataset, order, onAddFilter, timeZone }: StatsPanel
         className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800"
       >
         <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-          Column statistics
+          {t('stats.title')}
         </span>
         <span className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
-          {dataset.columns.length} columns · {order.length.toLocaleString()} rows
+          {t('stats.summary', {
+            cols: dataset.columns.length,
+            rows: order.length.toLocaleString(),
+          })}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className={cn(
@@ -100,15 +105,15 @@ export function StatsPanel({ dataset, order, onAddFilter, timeZone }: StatsPanel
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-slate-50 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
               <tr>
-                <th className="px-4 py-2 text-left">Column</th>
-                <th className="px-3 py-2 text-left">Type</th>
-                <th className="px-3 py-2 text-right">Non-null</th>
-                <th className="px-3 py-2 text-right">Null</th>
-                <th className="px-3 py-2 text-right">Distinct</th>
-                <th className="px-3 py-2 text-right">Min</th>
-                <th className="px-3 py-2 text-right">Mean</th>
-                <th className="px-3 py-2 text-right">Max</th>
-                <th className="px-3 py-2 text-left">Distribution</th>
+                <th className="px-4 py-2 text-left">{t('stats.col.column')}</th>
+                <th className="px-3 py-2 text-left">{t('stats.col.type')}</th>
+                <th className="px-3 py-2 text-right">{t('stats.col.nonNull')}</th>
+                <th className="px-3 py-2 text-right">{t('stats.col.null')}</th>
+                <th className="px-3 py-2 text-right">{t('stats.col.distinct')}</th>
+                <th className="px-3 py-2 text-right">{t('stats.col.min')}</th>
+                <th className="px-3 py-2 text-right">{t('stats.col.mean')}</th>
+                <th className="px-3 py-2 text-right">{t('stats.col.max')}</th>
+                <th className="px-3 py-2 text-left">{t('stats.col.distribution')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -163,7 +168,7 @@ export function StatsPanel({ dataset, order, onAddFilter, timeZone }: StatsPanel
                                 : { key: s.key, anchor: e.currentTarget },
                             )
                           }
-                          aria-label={`Show ${s.name} distribution`}
+                          aria-label={t('stats.showDist', { name: s.name })}
                           aria-expanded={open?.key === s.key}
                           className="rounded transition hover:ring-2 hover:ring-brand-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                         >
