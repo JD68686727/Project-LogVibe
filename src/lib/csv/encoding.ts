@@ -8,7 +8,11 @@ export type Encoding = 'utf-8' | 'utf-16le' | 'utf-16be' | 'windows-1252';
  * legacy Windows-1252 (Latin-1). Non-BOM UTF-16 is not detectable and stays as
  * UTF-8 (rare in practice; tools that emit UTF-16 write a BOM).
  */
-export function detectEncoding(head: Uint8Array): { encoding: Encoding; bom: boolean } {
+export function detectEncoding(
+  head: Uint8Array,
+  /** True when `head` is a truncated prefix of a larger file (see below). */
+  truncated = false,
+): { encoding: Encoding; bom: boolean } {
   if (head.length >= 3 && head[0] === 0xef && head[1] === 0xbb && head[2] === 0xbf) {
     return { encoding: 'utf-8', bom: true };
   }
@@ -19,7 +23,13 @@ export function detectEncoding(head: Uint8Array): { encoding: Encoding; bom: boo
     return { encoding: 'utf-16be', bom: true };
   }
   try {
-    new TextDecoder('utf-8', { fatal: true }).decode(head);
+    // When `head` is a truncated prefix (the file is larger than the sniff
+    // window), `stream: true` tolerates a multi-byte sequence merely *cut off*
+    // at the end — so a valid UTF-8 file whose char straddles the 4096-byte
+    // boundary isn't misread as Windows-1252. It still throws on genuinely
+    // invalid bytes anywhere before the end. For a whole (non-truncated) file we
+    // decode strictly, so a small Latin-1 file ending in `é` is still detected.
+    new TextDecoder('utf-8', { fatal: true }).decode(head, { stream: truncated });
     return { encoding: 'utf-8', bom: false };
   } catch {
     return { encoding: 'windows-1252', bom: false };
@@ -48,7 +58,7 @@ export async function readFileSmart(
   file: File,
 ): Promise<{ text: string; encoding: Encoding }> {
   const head = new Uint8Array(await file.slice(0, 4096).arrayBuffer());
-  const { encoding } = detectEncoding(head);
+  const { encoding } = detectEncoding(head, file.size > head.length);
   const text = decodeBytes(await file.arrayBuffer(), encoding);
   return { text: stripBom(text), encoding };
 }
