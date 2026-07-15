@@ -3,6 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ColumnSchema, Dataset } from '@/types/dataset';
 import type { SortDirection, SortKey } from '@/types/table';
 import { cn } from '@/utils/cn';
+import { useI18n } from '@/lib/i18n/I18nContext';
 import { formatCell } from '../utils/formatCell';
 
 const ROW_HEIGHT = 36;
@@ -65,6 +66,7 @@ export function DataTable({
   timeZone,
   autoScroll,
 }: DataTableProps) {
+  const { t } = useI18n();
   const parentRef = useRef<HTMLDivElement>(null);
   // Stay pinned to the bottom only while the user is already there.
   const stickToBottom = useRef(true);
@@ -95,7 +97,7 @@ export function DataTable({
         ref={parentRef}
         onScroll={onScroll}
         role="region"
-        aria-label="Data table"
+        aria-label={t('table.aria')}
         className="relative max-h-[70vh] overflow-auto"
       >
         {/* Header — sticky vertically, scrolls horizontally with the body. */}
@@ -114,7 +116,7 @@ export function DataTable({
                 key={col.key}
                 type="button"
                 onClick={(e) => onToggleSort(col.key, e.shiftKey)}
-                title={`${col.name} · ${col.type} — click to sort, Shift-click to add`}
+                title={t('table.sortHint', { name: col.name, type: col.type })}
                 className={cn(
                   'flex items-center gap-1 px-3 py-2 text-left transition-colors hover:bg-slate-100 dark:hover:bg-slate-700',
                   active && 'text-brand-700 dark:text-brand-300',
@@ -204,10 +206,10 @@ export function DataTable({
         {order.length === 0 && (
           <div className="flex flex-col items-center justify-center gap-1 py-16 text-center">
             <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
-              No rows match
+              {t('table.noRows')}
             </p>
             <p className="text-xs text-slate-400 dark:text-slate-500">
-              Adjust or remove a filter to see results.
+              {t('table.noRowsHint')}
             </p>
           </div>
         )}

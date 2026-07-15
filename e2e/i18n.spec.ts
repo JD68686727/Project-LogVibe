@@ -59,4 +59,10 @@ test('i18n: the filter bar is translated after switching to German', async ({
   await expect(page.getByRole('button', { name: 'Ansicht teilen' })).toBeVisible();
   await expect(page.getByText('Gespeicherte Ansichten')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Ansicht speichern' })).toBeVisible();
+
+  // Row detail drawer is translated.
+  await page.getByText('2026-06-19 08:01:12').click();
+  const drawer = page.getByTestId('row-detail');
+  await expect(drawer.getByText('Zeile 1')).toBeVisible();
+  await expect(drawer.getByRole('button', { name: 'Nächste Zeile' })).toBeVisible();
 });

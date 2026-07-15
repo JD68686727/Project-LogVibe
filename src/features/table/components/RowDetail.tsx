@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import type { CellValue, ColumnType, Dataset } from '@/types/dataset';
 import { cn } from '@/utils/cn';
 import { categoricalFilter, type NewFilter } from '@/lib/stats/distributionFilter';
+import { useI18n } from '@/lib/i18n/I18nContext';
 import { formatCell } from '../utils/formatCell';
 
 const TYPE_BADGE: Record<ColumnType, string> = {
@@ -46,6 +47,7 @@ export function RowDetail({
   onAddFilter,
   timeZone,
 }: RowDetailProps) {
+  const { t } = useI18n();
   const pos = order.indexOf(rowIdx);
   const inView = pos !== -1;
   const row = dataset.rows[rowIdx];
@@ -75,26 +77,29 @@ export function RowDetail({
     <div className="fixed inset-0 z-50 flex justify-end">
       <button
         type="button"
-        aria-label="Close row detail"
+        aria-label={t('row.closeAria')}
         onClick={onClose}
         className="absolute inset-0 bg-slate-900/30 backdrop-blur-[1px]"
       />
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Row detail"
+        aria-label={t('row.detailAria')}
         data-testid="row-detail"
         className="relative flex h-full w-full max-w-md flex-col border-l border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900"
       >
         <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-              Row {(rowIdx + 1).toLocaleString()}
+              {t('row.title', { n: (rowIdx + 1).toLocaleString() })}
             </span>
             <span className="text-xs text-slate-400 dark:text-slate-500">
               {inView
-                ? `${(pos + 1).toLocaleString()} of ${order.length.toLocaleString()} in view`
-                : 'not in the current filtered view'}
+                ? t('row.position', {
+                    pos: (pos + 1).toLocaleString(),
+                    total: order.length.toLocaleString(),
+                  })
+                : t('row.notInView')}
             </span>
           </div>
           <div className="ml-auto flex items-center gap-1">
@@ -102,7 +107,7 @@ export function RowDetail({
               type="button"
               onClick={goPrev}
               disabled={!inView || pos === 0}
-              aria-label="Previous row"
+              aria-label={t('row.prev')}
               className={iconBtn}
             >
               ↑
@@ -111,7 +116,7 @@ export function RowDetail({
               type="button"
               onClick={goNext}
               disabled={!inView || pos >= order.length - 1}
-              aria-label="Next row"
+              aria-label={t('row.next')}
               className={iconBtn}
             >
               ↓
@@ -119,7 +124,7 @@ export function RowDetail({
             <button
               type="button"
               onClick={onClose}
-              aria-label="Close"
+              aria-label={t('common.close')}
               className={iconBtn}
             >
               ✕
@@ -153,19 +158,19 @@ export function RowDetail({
                           onAddFilter(filterFor(col.key, col.type, value));
                           onClose();
                         }}
-                        aria-label={`Filter by ${col.name}`}
+                        aria-label={t('extract.filterBy', { value: col.name })}
                         className="rounded px-1.5 py-0.5 text-[11px] font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10"
                       >
-                        Filter
+                        {t('filter.quick.filter')}
                       </button>
                     )}
                     <button
                       type="button"
                       onClick={() => copy(value)}
-                      aria-label={`Copy ${col.name}`}
+                      aria-label={t('row.copyField', { name: col.name })}
                       className="rounded px-1.5 py-0.5 text-[11px] font-medium text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
                     >
-                      Copy
+                      {t('row.copy')}
                     </button>
                   </div>
                 </div>
