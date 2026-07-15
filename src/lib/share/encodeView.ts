@@ -1,7 +1,9 @@
 import type { ViewState } from '@/types/share';
 import type { PivotConfig } from '@/types/pivot';
-import type { SortKey } from '@/types/table';
+import type { ChartConfig, ChartType, Aggregation, DateBucket } from '@/types/chart';
+import type { ColumnViewItem, SortKey } from '@/types/table';
 import type { DerivedSpec } from '@/lib/table/deriveColumn';
+import { safeRegExp } from '@/lib/table/deriveColumn';
 import { normalizeFilterGroups } from '@/lib/filter/normalizeGroups';
 
 /** URL-safe base64 of a UTF-8 string (browser-native, no deps). */
@@ -67,8 +69,12 @@ function isDerivedSpec(value: unknown): value is DerivedSpec {
     );
   }
   if (s.kind === 'concat') return typeof s.template === 'string';
-  // extract (kind undefined or 'extract')
-  return typeof s.sourceKey === 'string' && typeof s.pattern === 'string';
+  // extract (kind undefined or 'extract'): the pattern must actually compile,
+  // so a hostile/broken link can't inject a throwing or unusable regex.
+  if (typeof s.sourceKey !== 'string' || typeof s.pattern !== 'string') return false;
+  if (s.flags !== undefined && typeof s.flags !== 'string') return false;
+  if (s.group !== undefined && typeof s.group !== 'number') return false;
+  return safeRegExp(s.pattern, s.flags as string | undefined) !== null;
 }
 
 /** Keeps only well-formed derived specs; undefined when absent/empty. */
@@ -76,6 +82,36 @@ function normalizeDerived(raw: unknown): DerivedSpec[] | undefined {
   if (!Array.isArray(raw)) return undefined;
   const specs = raw.filter(isDerivedSpec);
   return specs.length > 0 ? specs : undefined;
+}
+
+/** Keeps only well-formed `{key, visible}` column items from untrusted input. */
+function isColumnViewItem(value: unknown): value is ColumnViewItem {
+  if (typeof value !== 'object' || value === null) return false;
+  const c = value as Record<string, unknown>;
+  return typeof c.key === 'string' && typeof c.visible === 'boolean';
+}
+
+function normalizeColumns(raw: unknown): ColumnViewItem[] {
+  return Array.isArray(raw) ? raw.filter(isColumnViewItem) : [];
+}
+
+const CHART_TYPES = new Set<ChartType>(['bar', 'line', 'pie']);
+const AGGS = new Set<Aggregation>(['count', 'sum', 'avg', 'min', 'max']);
+const BUCKETS = new Set<DateBucket>(['none', 'hour', 'day', 'week', 'month']);
+
+/** Rebuilds a safe ChartConfig from untrusted input, filling defaults for any
+ *  missing/invalid field so a malformed link can't crash the chart. */
+function normalizeChart(raw: unknown): ChartConfig {
+  const c = (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>;
+  return {
+    type: CHART_TYPES.has(c.type as ChartType) ? (c.type as ChartType) : 'bar',
+    dimensionKey: typeof c.dimensionKey === 'string' ? c.dimensionKey : '',
+    measureKey: typeof c.measureKey === 'string' ? c.measureKey : null,
+    aggregation: AGGS.has(c.aggregation as Aggregation)
+      ? (c.aggregation as Aggregation)
+      : 'count',
+    bucket: BUCKETS.has(c.bucket as DateBucket) ? (c.bucket as DateBucket) : 'none',
+  };
 }
 
 /** Validates the shared fields; `sort`/`groups` are normalised separately. */
@@ -103,8 +139,8 @@ export function decodeView(token: string): ViewState | null {
       query: raw.query as string,
       searchRegex: raw.searchRegex === true ? true : undefined,
       sort: normalizeSort(raw.sort),
-      chart: raw.chart as ViewState['chart'],
-      columns: raw.columns as ViewState['columns'],
+      chart: normalizeChart(raw.chart),
+      columns: normalizeColumns(raw.columns),
       pivot: isPivotConfig(raw.pivot) ? raw.pivot : undefined,
       derived: normalizeDerived(raw.derived),
     };

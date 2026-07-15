@@ -50,6 +50,25 @@ export interface ConcatSpec {
   type?: ColumnType;
 }
 
+/**
+ * Keeps only safe, order-independent regex flags. Drops `g`/`y` (which change
+ * `String.match` to return all matches with **no capture groups**, silently
+ * breaking group extraction) and any invalid flag char.
+ */
+export function sanitizeFlags(flags: string | undefined): string {
+  return [...new Set(flags ?? '')].filter((f) => 'imsu'.includes(f)).join('');
+}
+
+/** Compiles a regex, returning null instead of throwing on an invalid pattern
+ *  or flags — so an untrusted (share-link) spec can never crash the pipeline. */
+export function safeRegExp(pattern: string, flags?: string): RegExp | null {
+  try {
+    return new RegExp(pattern, sanitizeFlags(flags));
+  } catch {
+    return null;
+  }
+}
+
 /** Slugifies a name into a stable key, de-duped against existing keys. */
 function uniqueKey(name: string, taken: Record<string, number>): string {
   const base =
@@ -82,13 +101,15 @@ function appendColumn(
  * Returns a new Dataset with an extra column computed by regex-extracting from a
  * source column. Each row's source cell is read as a string, matched, and the
  * chosen capture group coerced to the target type (no match → null). Immutable,
- * mirroring `retypeColumn`. Throws on an invalid regex (caller guards the UI).
+ * mirroring `retypeColumn`. An invalid regex/flags is a no-op (returns the
+ * dataset unchanged) rather than throwing, so an untrusted spec can't crash.
  */
 function deriveExtract(dataset: Dataset, spec: ExtractSpec): Dataset {
   const srcIdx = dataset.columnIndex[spec.sourceKey];
   if (srcIdx == null) return dataset;
 
-  const re = new RegExp(spec.pattern, spec.flags);
+  const re = safeRegExp(spec.pattern, spec.flags);
+  if (!re) return dataset;
   const group = spec.group ?? 1;
   const type = spec.type ?? 'string';
 

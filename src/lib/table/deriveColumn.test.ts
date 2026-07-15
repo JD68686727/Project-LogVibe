@@ -56,8 +56,22 @@ describe('deriveColumn', () => {
     expect(out.columns.map((c) => c.key)).toEqual(['msg', 'msg_2']);
   });
 
-  it('throws on an invalid regex (caller guards)', () => {
-    expect(() => deriveColumn(ds(), { name: 'x', sourceKey: 'msg', pattern: '(' })).toThrow();
+  it('is a no-op for an invalid regex (never throws — untrusted specs are safe)', () => {
+    const d = ds();
+    const out = deriveColumn(d, { name: 'x', sourceKey: 'msg', pattern: '(' });
+    expect(out).toBe(d); // dataset unchanged, no column added
+  });
+
+  it('sanitizes flags so a `g` flag still extracts the capture group', () => {
+    // With a raw `g` flag, String.match returns all matches and drops groups;
+    // sanitizeFlags strips it, so group 1 is still extracted per row.
+    const out = deriveColumn(ds(), {
+      name: 'status',
+      sourceKey: 'msg',
+      pattern: '(\\d{3})',
+      flags: 'gi',
+    });
+    expect(out.rows[0][out.columnIndex.status]).toBe('200');
   });
 
   it('is a no-op for an unknown source column', () => {
