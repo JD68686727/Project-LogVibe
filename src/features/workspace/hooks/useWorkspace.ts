@@ -26,6 +26,8 @@ export interface UseWorkspace {
   /** Replaces a file's dataset via an updater (live tailing appends rows). */
   updateDataset: (fileId: string, updater: (prev: Dataset) => Dataset) => void;
   removeFile: (id: string) => void;
+  /** Removes every loaded file (returns to the start screen). */
+  clear: () => void;
   setActive: (id: string) => void;
   /** Override a column's inferred type; re-coerces cells and remembers it. */
   setColumnType: (fileId: string, columnKey: string, type: ColumnType) => void;
@@ -67,6 +69,11 @@ export function useWorkspace(): UseWorkspace {
 
   const removeFile = useCallback((id: string) => {
     setFiles((prev) => prev.filter((f) => f.id !== id));
+  }, []);
+
+  const clear = useCallback(() => {
+    setFiles([]);
+    setActiveId(null);
   }, []);
 
   const setActive = useCallback((id: string) => setActiveId(id), []);
@@ -141,6 +148,7 @@ export function useWorkspace(): UseWorkspace {
     addDataset,
     updateDataset,
     removeFile,
+    clear,
     setActive,
     setColumnType,
     addDerivedColumn,
