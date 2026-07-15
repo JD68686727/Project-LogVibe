@@ -1,6 +1,7 @@
 import type { ColumnFilter } from '@/types/filter';
 import { cn } from '@/utils/cn';
 import { inputCls } from '@/utils/controls';
+import { useI18n } from '@/lib/i18n/I18nContext';
 import { FilterRow } from '@/features/filtering/components/FilterRow';
 import type { CompareFileItem } from '../hooks/useCompareConfig';
 
@@ -29,6 +30,7 @@ export function CompareFileRow({
   showOffset,
   onOffsetChange,
 }: CompareFileRowProps) {
+  const { t } = useI18n();
   const isFiltered = item.filteredRows !== item.rows;
 
   return (
@@ -68,16 +70,19 @@ export function CompareFileRow({
               : 'text-slate-400 dark:text-slate-500',
           )}
         >
-          {item.filteredRows.toLocaleString()} of {item.rows.toLocaleString()} rows
+          {t('filter.rowCount', {
+            n: item.filteredRows.toLocaleString(),
+            total: item.rows.toLocaleString(),
+          })}
         </span>
 
         <div className="ml-auto flex items-center gap-2">
           {showOffset && (
             <label className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-              Offset
+              {t('compare.offset')}
               <input
                 type="number"
-                aria-label={`Time offset in seconds for ${item.label}`}
+                aria-label={t('compare.offsetAria', { name: item.label })}
                 value={item.offsetSeconds}
                 onChange={(e) =>
                   onOffsetChange(item.id, Number(e.target.value) || 0)
@@ -92,7 +97,7 @@ export function CompareFileRow({
             onClick={() => onAddFilter(item.id)}
             className="rounded-md px-2 py-1 text-xs font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10"
           >
-            + Filter
+            {t('compare.addFilter')}
           </button>
         </div>
       </div>

@@ -2,6 +2,8 @@ import path from 'node:path';
 import { test, expect } from '@playwright/test';
 
 const CSV = path.join(process.cwd(), 'samples', 'server-logs.csv');
+const SYNC_A = path.join(process.cwd(), 'samples', 'sync-a.csv');
+const SYNC_B = path.join(process.cwd(), 'samples', 'sync-b.csv');
 
 test('i18n: switching to German translates the UI, and it persists', async ({
   page,
@@ -70,4 +72,21 @@ test('i18n: the filter bar is translated after switching to German', async ({
   const drawer = page.getByTestId('row-detail');
   await expect(drawer.getByText('Zeile 1')).toBeVisible();
   await expect(drawer.getByRole('button', { name: 'Nächste Zeile' })).toBeVisible();
+});
+
+test('i18n: the compare view is translated after switching to German', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.setInputFiles('input[type="file"]', SYNC_A);
+  await expect(page.getByRole('button', { name: 'Compare' })).toBeVisible();
+  await page.setInputFiles('input[type="file"]', SYNC_B);
+
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.getByTestId('settings-panel').getByLabel('Language').selectOption('de');
+  await page.getByRole('button', { name: 'Schließen' }).click();
+
+  await page.getByRole('button', { name: 'Vergleichen' }).click();
+  await expect(page.getByText('Dateien', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Diff' })).toBeVisible();
 });

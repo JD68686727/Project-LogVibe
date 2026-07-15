@@ -14,6 +14,7 @@ import {
 import type { CompareChartType, CompareSeriesRow } from '@/types/compare';
 import { seriesColor } from '@/utils/chartColors';
 import { formatNumber } from '@/utils/formatNumber';
+import { useI18n } from '@/lib/i18n/I18nContext';
 
 // Theme-aware via CSS variables (see index.css).
 const AXIS_TICK = { fontSize: 11, fill: 'var(--chart-axis)' };
@@ -82,10 +83,11 @@ function renderChart(
 }
 
 export function CompareChart({ type, data, seriesLabels }: CompareChartProps) {
+  const { t } = useI18n();
   if (data.length === 0 || seriesLabels.length === 0) {
     return (
       <div className="flex h-72 items-center justify-center text-sm text-slate-400 dark:text-slate-500">
-        Nothing to compare yet
+        {t('compare.nothing')}
       </div>
     );
   }
