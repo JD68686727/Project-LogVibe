@@ -8,6 +8,7 @@ import type { Lang } from '@/types/i18n';
 export const en = {
   'app.tagline': 'Privacy-first, local CSV & log analyzer',
 
+  'header.home': 'Back to start',
   'header.settings': 'Settings',
   'header.shortcuts': 'Keyboard shortcuts',
 
@@ -411,6 +412,7 @@ export type TKey = keyof typeof en;
 export const de: Record<TKey, string> = {
   'app.tagline': 'Datenschutz-first, lokaler CSV- & Log-Analyzer',
 
+  'header.home': 'Zurück zum Start',
   'header.settings': 'Einstellungen',
   'header.shortcuts': 'Tastaturkürzel',
 

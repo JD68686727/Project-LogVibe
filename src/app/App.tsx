@@ -123,13 +123,28 @@ export function App() {
 
   const hasFiles = ws.files.length > 0;
 
+  // Header logo → return to the start screen (clears the in-memory workspace).
+  const goHome = () => {
+    if (tail.active) tail.stop();
+    ws.clear();
+    reset();
+    setMode('analyze');
+  };
+
   return (
     <div className="min-h-screen">
       <header className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
         <div className="mx-auto flex max-w-[100rem] items-center gap-2 px-4 py-3 sm:px-6 sm:py-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-sm font-bold text-white">
+          <button
+            type="button"
+            onClick={goHome}
+            disabled={!hasFiles}
+            aria-label={t('header.home')}
+            title={t('header.home')}
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-sm font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 enabled:hover:bg-brand-700 disabled:cursor-default"
+          >
             LV
-          </div>
+          </button>
           <div>
             <h1 className="text-lg font-semibold leading-tight text-slate-900 dark:text-slate-100">
               LogVibe
