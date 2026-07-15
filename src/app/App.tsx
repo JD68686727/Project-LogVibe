@@ -235,10 +235,10 @@ export function App() {
                     className="flex flex-col gap-0.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left transition-colors hover:border-brand-400 hover:bg-brand-50/40 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-brand-500 dark:hover:bg-brand-500/10"
                   >
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                      {s.label}
+                      {t(s.label)}
                     </span>
                     <span className="text-xs text-slate-400 dark:text-slate-500">
-                      {s.description}
+                      {t(s.description)}
                     </span>
                   </button>
                 ))}

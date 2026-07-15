@@ -362,6 +362,16 @@ export const en = {
   'pattern.parseFile': 'Parse file',
   'pattern.noLinesMatched': 'No lines in the file matched the pattern.',
 
+  'tz.aria': 'Display timezone',
+  'tz.local': 'Local (browser)',
+
+  'sample.server-logs.label': 'Server logs',
+  'sample.server-logs.description': 'HTTP requests — status, latency, endpoints',
+  'sample.web-attack.label': 'Web attack',
+  'sample.web-attack.description': 'Probing traffic — try the Security scan',
+  'sample.auth-events.label': 'Auth events',
+  'sample.auth-events.description': 'Failed logins — brute-force demo',
+
   'settings.title': 'Settings',
   'settings.appearance': 'Appearance',
   'settings.appearance.hint': 'Light, system, or dark theme',
@@ -754,6 +764,16 @@ export const de: Record<TKey, string> = {
   'pattern.parsing': 'Wird geparst…',
   'pattern.parseFile': 'Datei parsen',
   'pattern.noLinesMatched': 'Keine Zeile der Datei passte zum Muster.',
+
+  'tz.aria': 'Anzeige-Zeitzone',
+  'tz.local': 'Lokal (Browser)',
+
+  'sample.server-logs.label': 'Server-Logs',
+  'sample.server-logs.description': 'HTTP-Anfragen — Status, Latenz, Endpunkte',
+  'sample.web-attack.label': 'Web-Angriff',
+  'sample.web-attack.description': 'Probing-Traffic — teste den Sicherheits-Scan',
+  'sample.auth-events.label': 'Auth-Ereignisse',
+  'sample.auth-events.description': 'Fehlgeschlagene Logins — Brute-Force-Demo',
 
   'settings.title': 'Einstellungen',
   'settings.appearance': 'Darstellung',
