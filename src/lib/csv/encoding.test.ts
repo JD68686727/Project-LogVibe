@@ -25,6 +25,14 @@ describe('detectEncoding', () => {
     // "café" in Latin-1 → é = 0xE9 (a lone high byte, invalid UTF-8)
     expect(detectEncoding(u8(0x63, 0x61, 0x66, 0xe9)).encoding).toBe('windows-1252');
   });
+
+  it('does not misread a UTF-8 char cut off at the sniff boundary (truncated)', () => {
+    // A valid UTF-8 head that ends mid-character (0xC3 is the lead byte of a
+    // 2-byte sequence; its second byte fell past the 4096-byte window).
+    const cut = u8(0x61, 0x62, 0xc3);
+    expect(detectEncoding(cut, true).encoding).toBe('utf-8'); // truncated → tolerated
+    expect(detectEncoding(cut, false).encoding).toBe('windows-1252'); // whole file → strict
+  });
 });
 
 describe('decodeBytes', () => {

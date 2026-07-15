@@ -175,7 +175,10 @@ export function useLogParser(): UseLogParser {
       try {
         const headBuf = await file.slice(0, 4096).arrayBuffer();
         if (isStale()) return;
-        const { encoding } = detectEncoding(new Uint8Array(headBuf));
+        const { encoding } = detectEncoding(
+          new Uint8Array(headBuf),
+          file.size > headBuf.byteLength,
+        );
 
         // Network-artifact adapters (ARP, TShark…) get first refusal: sniff the
         // decoded head, and if one claims the format, parse via it. Adapters are

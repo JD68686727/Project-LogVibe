@@ -38,6 +38,26 @@ describe('datasetToCsv', () => {
     expect(lines[2].startsWith('INFO')).toBe(true);
   });
 
+  it('neutralizes spreadsheet formula injection, sparing plain numbers', () => {
+    const inj = makeDataset(
+      [
+        { name: 'agent', type: 'string' },
+        { name: 'delta', type: 'number' },
+      ],
+      [
+        ['=HYPERLINK("http://evil","x")', -5], // formula → escaped; -5 stays a number
+        ['@SUM(A1)', 3],
+        ['-2+3+cmd|calc', 1], // non-numeric leading '-' → escaped
+        ['plain', 0],
+      ],
+    );
+    const rows = datasetToCsv(inj, [0, 1, 2, 3]).split(/\r?\n/);
+    expect(rows[1]).toBe(`"'=HYPERLINK(""http://evil"",""x"")",-5`);
+    expect(rows[2]).toBe(`'@SUM(A1),3`);
+    expect(rows[3]).toBe(`'-2+3+cmd|calc,1`);
+    expect(rows[4]).toBe('plain,0'); // untouched
+  });
+
   it('reformats date columns into the given timezone, leaving others raw', () => {
     const dds = makeDataset(
       [
