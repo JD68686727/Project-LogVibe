@@ -7,6 +7,7 @@ import { ruleTitle } from '@/lib/config/rules';
 import { readFileSmart } from '@/lib/csv/encoding';
 import { downloadBlob } from '@/utils/downloadBlob';
 import { btnSecondary } from '@/utils/controls';
+import { useI18n } from '@/lib/i18n/I18nContext';
 import { ModalShell } from '@/features/analysis/components/ModalShell';
 import { FindingsTable } from '@/features/analysis/components/FindingsTable';
 
@@ -23,6 +24,7 @@ function baseName(fileName: string): string {
 /** Loads a server config file, checks it against local hardening rules, and
  *  surfaces findings — 100% in the browser, no upload. */
 export function ConfigAuditModal({ onFindings, onClose }: ConfigAuditModalProps) {
+  const { t } = useI18n();
   const [fileName, setFileName] = useState<string | null>(null);
   const [result, setResult] = useState<ConfigAuditResult | null>(null);
   const [busy, setBusy] = useState(false);
@@ -37,7 +39,7 @@ export function ConfigAuditModal({ onFindings, onClose }: ConfigAuditModalProps)
       setFileName(file.name);
       setResult(auditConfigText(file.name, text));
     } catch {
-      setError('Could not read that file.');
+      setError(t('config.readError'));
     } finally {
       setBusy(false);
     }
@@ -65,20 +67,24 @@ export function ConfigAuditModal({ onFindings, onClose }: ConfigAuditModalProps)
 
   return (
     <ModalShell
-      title="Config audit"
-      subtitle="Check a server config (SSH, Apache, nginx, Cisco, Docker, firewall…) against local hardening rules — nothing leaves your browser."
+      title={t('config.title')}
+      subtitle={t('config.subtitle')}
       testId="config-audit"
       onClose={onClose}
       footer={
         <>
           <p className="text-xs text-slate-400 dark:text-slate-500">
             {result
-              ? `${result.syntax.toUpperCase()} · ${result.entryCount} directives · ${issues} issue${issues === 1 ? '' : 's'}`
-              : 'Load a config file to begin.'}
+              ? t('config.footer', {
+                  syntax: result.syntax.toUpperCase(),
+                  n: result.entryCount,
+                  issues,
+                })
+              : t('config.footerStart')}
           </p>
           <div className="flex items-center gap-2">
             <button type="button" onClick={onClose} className={btnSecondary}>
-              Close
+              {t('common.close')}
             </button>
             <button
               type="button"
@@ -86,7 +92,7 @@ export function ConfigAuditModal({ onFindings, onClose }: ConfigAuditModalProps)
               onClick={downloadReport}
               className={`${btnSecondary} disabled:cursor-not-allowed disabled:opacity-40`}
             >
-              Download report
+              {t('report.download')}
             </button>
             <button
               type="button"
@@ -94,7 +100,7 @@ export function ConfigAuditModal({ onFindings, onClose }: ConfigAuditModalProps)
               onClick={openAsDataset}
               className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Open as dataset
+              {t('findings.openDataset')}
             </button>
           </div>
         </>
@@ -107,7 +113,7 @@ export function ConfigAuditModal({ onFindings, onClose }: ConfigAuditModalProps)
             onClick={() => inputRef.current?.click()}
             className={btnSecondary}
           >
-            {busy ? 'Reading…' : 'Load config file…'}
+            {busy ? t('config.reading') : t('config.load')}
           </button>
           {fileName && (
             <span className="truncate text-xs text-slate-500 dark:text-slate-400">
@@ -136,15 +142,15 @@ export function ConfigAuditModal({ onFindings, onClose }: ConfigAuditModalProps)
         (issues > 0 ? (
           <section className="space-y-1.5">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-              Findings
+              {t('findings.heading')}
             </p>
             <FindingsTable findings={result.findings} />
           </section>
         ) : (
           <p className="rounded-lg border border-dashed border-slate-200 px-3 py-6 text-center text-xs text-slate-400 dark:border-slate-700 dark:text-slate-500">
             {result.entryCount === 0
-              ? 'No directives were parsed from this file.'
-              : `No hardening issues found in ${result.entryCount} directives.`}
+              ? t('config.noDirectives')
+              : t('config.noIssues', { n: result.entryCount })}
           </p>
         ))}
     </ModalShell>

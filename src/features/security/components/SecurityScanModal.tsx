@@ -6,6 +6,8 @@ import { SECURITY_PROFILES } from '@/lib/security/profiles';
 import { makeCellRedactor } from '@/lib/export/redact';
 import { downloadBlob } from '@/utils/downloadBlob';
 import { btnSecondary } from '@/utils/controls';
+import { useI18n } from '@/lib/i18n/I18nContext';
+import type { TKey } from '@/lib/i18n/translations';
 import { ModalShell } from '@/features/analysis/components/ModalShell';
 import { FindingsTable } from '@/features/analysis/components/FindingsTable';
 import { useSecurityScan } from '../hooks/useSecurityScan';
@@ -35,6 +37,7 @@ export function SecurityScanModal({
   onOpenDataset,
   onClose,
 }: SecurityScanModalProps) {
+  const { t } = useI18n();
   const { findings, scanning } = useSecurityScan(dataset, order);
   const [redactReport, setRedactReport] = useState(false);
   const busy = scanning || findings.length === 0;
@@ -67,8 +70,8 @@ export function SecurityScanModal({
 
   return (
     <ModalShell
-      title="Security scan"
-      subtitle="Run built-in defensive profiles over the current filtered view — nothing leaves your browser."
+      title={t('security.scan')}
+      subtitle={t('security.subtitle')}
       testId="security-scan"
       onClose={onClose}
       footer={
@@ -76,10 +79,13 @@ export function SecurityScanModal({
           <div className="flex flex-wrap items-center gap-3">
             <p className="text-xs text-slate-400 dark:text-slate-500">
               {scanning
-                ? `Scanning ${order.length.toLocaleString()} rows…`
+                ? t('security.scanning', { n: order.length.toLocaleString() })
                 : findings.length > 0
-                  ? `${findings.length} finding${findings.length === 1 ? '' : 's'} across ${order.length.toLocaleString()} rows`
-                  : 'No threats detected by the active profiles.'}
+                  ? t('security.summary', {
+                      n: findings.length,
+                      rows: order.length.toLocaleString(),
+                    })
+                  : t('security.none')}
             </p>
             {!scanning && findings.length > 0 && (
               <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
@@ -89,13 +95,13 @@ export function SecurityScanModal({
                   onChange={(e) => setRedactReport(e.target.checked)}
                   className={checkbox}
                 />
-                Redact addresses
+                {t('security.redactAddresses')}
               </label>
             )}
           </div>
           <div className="flex items-center gap-2">
             <button type="button" onClick={onClose} className={btnSecondary}>
-              Close
+              {t('common.close')}
             </button>
             <button
               type="button"
@@ -103,7 +109,7 @@ export function SecurityScanModal({
               onClick={downloadReport}
               className={`${btnSecondary} disabled:cursor-not-allowed disabled:opacity-40`}
             >
-              Download report
+              {t('report.download')}
             </button>
             <button
               type="button"
@@ -111,7 +117,7 @@ export function SecurityScanModal({
               onClick={openAsDataset}
               className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Open as dataset
+              {t('findings.openDataset')}
             </button>
           </div>
         </>
@@ -120,7 +126,7 @@ export function SecurityScanModal({
       {/* Per-profile summary */}
       <section className="space-y-1.5">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-          Profiles
+          {t('security.profiles')}
         </p>
         <ul className="space-y-1">
           {SECURITY_PROFILES.map((p) => {
@@ -132,10 +138,10 @@ export function SecurityScanModal({
               >
                 <span>
                   <span className="font-medium text-slate-700 dark:text-slate-200">
-                    {p.label}
+                    {t(`security.profile.${p.id}.label` as TKey)}
                   </span>{' '}
                   <span className="text-xs text-slate-400 dark:text-slate-500">
-                    {p.hint}
+                    {t(`security.profile.${p.id}.hint` as TKey)}
                   </span>
                 </span>
                 <span
@@ -157,19 +163,18 @@ export function SecurityScanModal({
       {scanning ? (
         <p className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-slate-200 px-3 py-6 text-center text-xs text-slate-400 dark:border-slate-700 dark:text-slate-500">
           <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-300 border-t-brand-500 dark:border-slate-600 dark:border-t-brand-400" />
-          Scanning off the main thread…
+          {t('security.scanningThread')}
         </p>
       ) : findings.length > 0 ? (
         <section className="space-y-1.5">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-            Findings
+            {t('findings.heading')}
           </p>
           <FindingsTable findings={findings} />
         </section>
       ) : (
         <p className="rounded-lg border border-dashed border-slate-200 px-3 py-6 text-center text-xs text-slate-400 dark:border-slate-700 dark:text-slate-500">
-          Nothing flagged. Profiles that don&apos;t apply to this file&apos;s columns
-          are skipped automatically.
+          {t('security.nothing')}
         </p>
       )}
     </ModalShell>

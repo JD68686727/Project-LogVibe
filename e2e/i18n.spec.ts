@@ -67,6 +67,13 @@ test('i18n: the filter bar is translated after switching to German', async ({
   await expect(page.getByRole('button', { name: /Spaltenstatistik/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /Pivot-Tabelle/ })).toBeVisible();
 
+  // Security scan modal is translated.
+  await page.getByRole('button', { name: 'Sicherheits-Scan' }).click();
+  const scan = page.getByTestId('security-scan');
+  await expect(scan.getByText('Profile', { exact: true })).toBeVisible();
+  await expect(scan.getByText('Brute-Force-Anmeldeversuche')).toBeVisible();
+  await scan.getByRole('button', { name: 'Schließen' }).click();
+
   // Row detail drawer is translated.
   await page.getByText('2026-06-19 08:01:12').click();
   const drawer = page.getByTestId('row-detail');

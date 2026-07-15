@@ -1,4 +1,5 @@
 import { sortFindings, riskScore, type Finding } from '@/lib/analysis/findings';
+import { useI18n } from '@/lib/i18n/I18nContext';
 import { SeverityBadge } from './SeverityBadge';
 
 /** Compact, read-only table of findings, most urgent (highest risk) first. */
@@ -9,6 +10,7 @@ export function FindingsTable({
   findings: Finding[];
   cap?: number;
 }) {
+  const { t } = useI18n();
   const rows = sortFindings(findings).slice(0, cap);
   const showTechnique = rows.some((f) => f.technique);
   return (
@@ -16,13 +18,13 @@ export function FindingsTable({
       <table className="w-full text-xs" data-testid="findings-table">
         <thead className="bg-slate-50 text-left font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
           <tr>
-            <th className="px-2 py-1.5">Severity</th>
-            <th className="px-2 py-1.5">Rule</th>
-            {showTechnique && <th className="px-2 py-1.5">ATT&amp;CK</th>}
-            <th className="px-2 py-1.5">Entity</th>
-            <th className="px-2 py-1.5">Detail</th>
-            <th className="px-2 py-1.5 text-right">Count</th>
-            <th className="px-2 py-1.5 text-right">Risk</th>
+            <th className="px-2 py-1.5">{t('findings.severity')}</th>
+            <th className="px-2 py-1.5">{t('findings.rule')}</th>
+            {showTechnique && <th className="px-2 py-1.5">{t('findings.attack')}</th>}
+            <th className="px-2 py-1.5">{t('findings.entity')}</th>
+            <th className="px-2 py-1.5">{t('findings.detail')}</th>
+            <th className="px-2 py-1.5 text-right">{t('findings.count')}</th>
+            <th className="px-2 py-1.5 text-right">{t('findings.risk')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
