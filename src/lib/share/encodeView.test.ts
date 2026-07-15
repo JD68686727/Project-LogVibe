@@ -90,6 +90,40 @@ describe('encodeView / decodeView', () => {
     expect(decodeView(btoaSafe(JSON.stringify(none)))?.derived).toBeUndefined();
   });
 
+  it('drops a derived spec whose regex would not compile', () => {
+    const bad = {
+      ...view,
+      derived: [
+        { name: 'ok', sourceKey: 'msg', pattern: '(\\d+)' },
+        { name: 'broken', sourceKey: 'msg', pattern: '(' }, // invalid regex
+      ],
+    };
+    expect(decodeView(btoaSafe(JSON.stringify(bad)))?.derived).toEqual([
+      { name: 'ok', sourceKey: 'msg', pattern: '(\\d+)' },
+    ]);
+  });
+
+  it('filters malformed column items instead of crashing on apply', () => {
+    const hostile = {
+      ...view,
+      columns: [null, { key: 'level', visible: true }, { key: 5, visible: true }, 'x'],
+    };
+    expect(decodeView(btoaSafe(JSON.stringify(hostile)))?.columns).toEqual([
+      { key: 'level', visible: true },
+    ]);
+  });
+
+  it('rebuilds a safe chart from a malformed one (defaults, no crash)', () => {
+    const hostile = { ...view, chart: { type: 'evil', aggregation: 'drop' } };
+    expect(decodeView(btoaSafe(JSON.stringify(hostile)))?.chart).toEqual({
+      type: 'bar',
+      dimensionKey: '',
+      measureKey: null,
+      aggregation: 'count',
+      bucket: 'none',
+    });
+  });
+
   it('leaves pivot undefined for a legacy token without one', () => {
     const { groups, query, sort, chart, columns } = view;
     const legacy = { groups, query, sort, chart, columns };
