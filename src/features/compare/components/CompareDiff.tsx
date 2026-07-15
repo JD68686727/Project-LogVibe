@@ -6,6 +6,7 @@ import { formatNumber as fmt } from '@/utils/formatNumber';
 import { commonColumns } from '@/lib/compare/commonColumns';
 import { diffSchema } from '@/lib/compare/schemaDiff';
 import { diffRows } from '@/lib/compare/rowDiff';
+import { useI18n } from '@/lib/i18n/I18nContext';
 
 export interface CompareDiffProps {
   /** Baseline file (A). */
@@ -24,6 +25,7 @@ const heading = 'text-xs font-semibold uppercase tracking-wide text-slate-400 da
 const cell = (v: CellValue): string => (v == null || v === '' ? '∅' : String(v));
 
 export function CompareDiff({ a, b }: CompareDiffProps) {
+  const { t } = useI18n();
   const [expanded, setExpanded] = useState(false);
   const common = useMemo(() => commonColumns([a, b]), [a, b]);
   const [keyKey, setKeyKey] = useState(() => common[0]?.key ?? '');
@@ -46,7 +48,7 @@ export function CompareDiff({ a, b }: CompareDiffProps) {
         className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800"
       >
         <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-          Diff
+          {t('compare.diff')}
         </span>
         <span className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
           <span className="max-w-[40vw] truncate">
@@ -74,12 +76,12 @@ export function CompareDiff({ a, b }: CompareDiffProps) {
         >
           {/* Schema diff */}
           <section className="space-y-2">
-            <p className={heading}>Schema</p>
+            <p className={heading}>{t('compare.schema')}</p>
             {schema.added.length === 0 &&
             schema.removed.length === 0 &&
             schema.typeChanged.length === 0 ? (
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                Identical schema — {fmt(schema.unchanged.length)} shared columns.
+                {t('compare.identicalSchema', { n: fmt(schema.unchanged.length) })}
               </p>
             ) : (
               <div className="flex flex-wrap items-center gap-1.5">
@@ -98,7 +100,9 @@ export function CompareDiff({ a, b }: CompareDiffProps) {
                     ~ {c.name} ({c.from} → {c.to})
                   </span>
                 ))}
-                <span className={same}>= {fmt(schema.unchanged.length)} unchanged</span>
+                <span className={same}>
+                  {t('compare.schemaUnchanged', { n: fmt(schema.unchanged.length) })}
+                </span>
               </div>
             )}
           </section>
@@ -106,12 +110,12 @@ export function CompareDiff({ a, b }: CompareDiffProps) {
           {/* Row diff */}
           <section className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <p className={heading}>Rows</p>
+              <p className={heading}>{t('compare.rowsHeading')}</p>
               <label className="ml-auto text-xs font-medium text-slate-500 dark:text-slate-400">
-                Match by
+                {t('compare.matchBy')}
               </label>
               <select
-                aria-label="Diff key column"
+                aria-label={t('compare.keyColumn')}
                 value={keyKey}
                 onChange={(e) => setKeyKey(e.target.value)}
                 className={selectCls}
@@ -126,21 +130,20 @@ export function CompareDiff({ a, b }: CompareDiffProps) {
 
             {!rows ? (
               <p className="text-sm text-slate-400 dark:text-slate-500">
-                The files share no column to match rows on.
+                {t('compare.noMatchKey')}
               </p>
             ) : (
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className={added}>+{fmt(rows.added)} added</span>
-                  <span className={removed}>−{fmt(rows.removed)} removed</span>
-                  <span className={changed}>~{fmt(rows.changed)} changed</span>
-                  <span className={same}>={fmt(rows.unchanged)} unchanged</span>
+                  <span className={added}>{t('compare.rowsAdded', { n: fmt(rows.added) })}</span>
+                  <span className={removed}>{t('compare.rowsRemoved', { n: fmt(rows.removed) })}</span>
+                  <span className={changed}>{t('compare.rowsChanged', { n: fmt(rows.changed) })}</span>
+                  <span className={same}>{t('compare.rowsUnchanged', { n: fmt(rows.unchanged) })}</span>
                 </div>
 
                 {rows.duplicateKeys && (
                   <p className="text-xs text-amber-600 dark:text-amber-400">
-                    “{rows.keyName}” has repeated values — matched on the first
-                    occurrence, so the diff is approximate.
+                    {t('compare.dupKeys', { name: rows.keyName })}
                   </p>
                 )}
 
