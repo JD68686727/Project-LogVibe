@@ -30,6 +30,11 @@ them for security issues — without handing them to a third-party service.
   re-decoded. Column headers and types are inferred automatically.
 - **Custom log-pattern builder** — map unstructured logs (Nginx, Apache, syslog,
   app logs) into columns with a named-group regex, with a live preview.
+- **Live tailing** — follow a growing file (File System Access API, Chromium /
+  Edge): appended lines stream in and the view updates live. Works for CSV and
+  custom-log formats, with an optional **auto-scan** that surfaces threats as
+  they arrive and **desktop alerts** on new high-severity findings. A keep-last-N
+  ring buffer bounds memory on long-running tails.
 - **Network-artifact adapters** — `arp -a` tables and TShark/Wireshark text
   dumps are auto-detected and parsed into columns.
 - **One-click samples** — try bundled demo files straight from the empty state.
@@ -46,6 +51,11 @@ them for security issues — without handing them to a third-party service.
 - **Column statistics & distributions** — a collapsible profile (non-null / null
   / distinct, min / mean / max) with per-column histograms and top-values you can
   click to drill into a filter.
+- **Computed columns** — derive a new column from a formula: regex-extract a
+  field out of a raw message, do arithmetic between columns/constants, or stitch
+  fields into a text template. The result is a first-class column (filter / sort /
+  chart / pivot / export all work on it) that keeps computing while tailing, is
+  remembered across reloads, and travels in saved views and share links.
 
 ### Visualize
 - **Charts** — bar / line / pie over the filtered set; group-by + count / sum /
@@ -71,13 +81,24 @@ them for security issues — without handing them to a third-party service.
 
 ### Security (defensive)
 - **Threat scan** — one-click detectors over the current view: brute-force
-  logins, HTTP error scanning, path enumeration, off-hours activity, and
-  injection payloads (SQLi / XSS / path-traversal). Each finding is tagged with a
-  **MITRE ATT&CK** technique; open the findings as a first-class dataset.
-- **Config audit** — check SSH, Apache, nginx, and Cisco IOS configs against
-  built-in hardening rules (root login, weak TLS, telnet, default SNMP, …).
+  logins, HTTP error scanning, path enumeration, off-hours activity, injection
+  payloads (SQLi / XSS / path-traversal / command-injection / SSRF / Log4Shell),
+  and scanner-tool fingerprints (sqlmap / nikto / nmap …). Findings are ranked by
+  a **risk score** (severity × volume) and tagged with a **MITRE ATT&CK**
+  technique; the scan runs off the main thread and opens as a first-class dataset.
+- **Config audit** — check SSH, Apache, nginx, Cisco IOS, Docker Compose, and
+  firewall (iptables / ufw) configs against built-in hardening rules (root login,
+  weak TLS, telnet, default SNMP, privileged containers, allow-by-default
+  firewall policy, …).
 - **Security report** — export findings as a shareable Markdown report, with
   optional address redaction.
+
+### Configure
+- **Bilingual UI (English / German)** with locale-aware number formatting,
+  switchable in the settings and remembered per browser.
+- **Settings panel** — defaults for theme, display timezone, live-tail alerts,
+  and the live-tail buffer size, plus a one-click **"clear everything this
+  browser remembers"** (GDPR-friendly local-data management).
 
 Dark mode, responsive layout, and error boundaries throughout.
 
@@ -123,9 +144,11 @@ inherit the whole table / filter / export surface.
 Code is organized by **feature slice**, with logic kept separate from UI:
 
 - `src/features/*` — domain slices (`ingestion`, `table`, `filtering`,
-  `visualization`, `stats`, `presets`, `export`, `compare`, `workspace`, `time`,
-  `security`, `config`, `analysis`); each holds its React `hooks/` and
-  Tailwind `components/`.
+  `visualization`, `stats`, `presets`, `export`, `sharing`, `compare`,
+  `workspace`, `time`, `security`, `config`, `analysis`, `settings`); each holds
+  its React `hooks/` and Tailwind `components/`.
+- `src/lib/i18n/*` — the dependency-free English/German catalog + translation
+  context.
 - `src/lib/*` — pure, framework-free logic (`csv`, `filter`, `chart`, `stats`,
   `compare`, `storage`, `time`, `security`, `config`, `analysis`, `ingest`); this
   is where the correctness-critical code and unit tests are focused.
@@ -149,7 +172,8 @@ npm run e2e        # Playwright tests (real browser flows)
   aggregation, date bucketing + timezones, column stats, comparison + time-sync,
   export + redaction, the security detectors, config audit, and reporting.
 - **E2E** — `e2e/*.spec.ts` drive Chromium through the core journeys (ingest →
-  filter → chart, compare, security scan, config audit, redaction, timezone).
+  filter → chart, computed columns, compare, security scan, config audit,
+  redaction, timezone, live tailing, settings, and the bilingual UI).
   Playwright boots the dev server itself.
 
 ## Scripts
