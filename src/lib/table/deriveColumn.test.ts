@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { assembleDataset } from '@/lib/csv/assembleDataset';
-import { deriveColumn, dropColumn } from './deriveColumn';
+import { deriveColumn, dropColumn, recomputeDerived } from './deriveColumn';
 
 const ds = () =>
   assembleDataset(
@@ -161,6 +161,39 @@ describe('deriveColumn (concat)', () => {
       template: '{host} [{missing}]',
     });
     expect(out.rows[0][out.columnIndex.label]).toBe('10.0.0.1 [{missing}]');
+  });
+});
+
+describe('recomputeDerived', () => {
+  it('refreshes derived cells for rows added after the column was created', () => {
+    // Simulate a tailed dataset: derive a column, then append a row and
+    // recompute — the new row must get a real value, not null.
+    const withCol = deriveColumn(ds(), {
+      name: 'status',
+      sourceKey: 'msg',
+      pattern: '\\s(\\d{3})\\s',
+    });
+    // Append a raw row that only has the base column (as live-tail would).
+    const appended = {
+      ...withCol,
+      rows: [...withCol.rows, ['DELETE /x 204 0', null]], // derived cell null
+    };
+    const out = recomputeDerived(appended, [
+      { name: 'status', sourceKey: 'msg', pattern: '\\s(\\d{3})\\s' },
+    ]);
+    expect(out.rows.map((r) => r[out.columnIndex.status])).toEqual([
+      '200',
+      '403',
+      null, // original no-match row
+      '204', // the appended row now computed
+    ]);
+    // Column count is unchanged (dropped + re-added, not duplicated).
+    expect(out.columns.map((c) => c.key)).toEqual(['msg', 'status']);
+  });
+
+  it('is a no-op with no specs', () => {
+    const d = ds();
+    expect(recomputeDerived(d, [])).toBe(d);
   });
 });
 

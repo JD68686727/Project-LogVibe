@@ -198,6 +198,22 @@ export function applyDerivedSpecs(
 }
 
 /**
+ * Recomputes every derived column from its spec — used after live-tail appends
+ * (or evicts) rows so the computed columns cover the new rows too, rather than
+ * showing null. Drops the existing derived columns, then replays the specs.
+ * A no-op when there are none. Keys regenerate deterministically, so a persisted
+ * column view keeps referencing them.
+ */
+export function recomputeDerived(dataset: Dataset, specs: DerivedSpec[]): Dataset {
+  if (specs.length === 0) return dataset;
+  let base = dataset;
+  for (const col of dataset.columns) {
+    if (col.derived) base = dropColumn(base, col.key);
+  }
+  return applyDerivedSpecs(base, specs);
+}
+
+/**
  * Returns a new Dataset with a column removed (used to undo a derived column):
  * drops its schema entry + each row's cell and rebuilds the index. No-op for an
  * unknown key.
