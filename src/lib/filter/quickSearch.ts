@@ -1,4 +1,5 @@
 import type { Dataset } from '@/types/dataset';
+import { safeRegExp } from '@/lib/regex/safeRegex';
 
 /**
  * Free-text "grep across all columns" stage. Narrows an index array to rows
@@ -20,12 +21,10 @@ export function applyQuickSearch(
   const colCount = columns.length;
 
   if (opts.regex) {
-    let re: RegExp;
-    try {
-      re = new RegExp(query, 'i');
-    } catch {
-      return order; // invalid pattern → don't filter
-    }
+    // safeRegExp rejects invalid *and* likely-catastrophic patterns (the search
+    // runs over every cell on the main thread, and a share link can supply it).
+    const re = safeRegExp(query, 'i');
+    if (!re) return order; // invalid / unsafe pattern → don't filter
     return order.filter((rowIdx) => {
       const row = rows[rowIdx];
       for (let c = 0; c < colCount; c++) {

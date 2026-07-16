@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ColumnType } from '@/types/dataset';
 import type { ArithmeticOp, DerivedSpec } from '@/lib/table/deriveColumn';
+import { safeRegExp } from '@/lib/regex/safeRegex';
 import { btnSecondary } from '@/utils/controls';
 import { useI18n } from '@/lib/i18n/I18nContext';
 import type { ColumnManagerItem } from '../hooks/useColumnView';
@@ -69,9 +70,8 @@ export function ColumnManager({
     if (!onAddDerived || !name.trim()) return;
     if (mode === 'extract') {
       if (!pattern) return;
-      try {
-        new RegExp(pattern); // validate before committing
-      } catch {
+      if (!safeRegExp(pattern)) {
+        // Rejects both an invalid pattern and a likely-catastrophic one.
         setError(t('common.regexInvalid'));
         return;
       }

@@ -3,7 +3,7 @@ import type { PivotConfig } from '@/types/pivot';
 import type { ChartConfig, ChartType, Aggregation, DateBucket } from '@/types/chart';
 import type { ColumnViewItem, SortKey } from '@/types/table';
 import type { DerivedSpec } from '@/lib/table/deriveColumn';
-import { safeRegExp } from '@/lib/table/deriveColumn';
+import { safeRegExp } from '@/lib/regex/safeRegex';
 import { normalizeFilterGroups } from '@/lib/filter/normalizeGroups';
 
 /** URL-safe base64 of a UTF-8 string (browser-native, no deps). */
