@@ -44,6 +44,22 @@ export const en = {
   'parse.failed': 'Couldn’t parse the file',
   'parse.summary': '{rows} rows · {cols} columns · {size}',
   'parse.truncated': ' · truncated',
+  'parse.empty': 'The file appears to be empty or has no header row.',
+  'parse.readError': 'Could not read the file.',
+
+  'error.title': 'Something went wrong',
+  'error.retry': 'Try again',
+  'error.reload': 'Reload',
+
+  'restore.prompt': 'Welcome back — restore your last view for this file structure?',
+  'restore.filters': '{n} filters',
+  'restore.sorted': ' · sorted',
+  'restore.search': ' · search',
+  'restore.dismiss': 'Dismiss',
+  'restore.action': 'Restore last view',
+
+  'chart.empty': '(empty)',
+  'pivot.others': '(others)',
 
   'common.regexInvalid': 'Invalid regular expression',
 
@@ -313,6 +329,7 @@ export const en = {
   'tail.findings': '⚠ {n} findings',
   'tail.findingsTitle': 'Open Security scan for details',
   'tail.atCap': 'row cap reached — no longer appending',
+  'tail.lostAccess': 'Lost access to the file — stopped tailing.',
   'tail.alertAria': 'Alert on high-severity findings',
   'tail.alertTitle': 'Desktop alert on new high-severity findings',
   'tail.alertsOn': '🔔 Alerts on',
@@ -448,6 +465,23 @@ export const de: Record<TKey, string> = {
   'parse.failed': 'Datei konnte nicht geparst werden',
   'parse.summary': '{rows} Zeilen · {cols} Spalten · {size}',
   'parse.truncated': ' · gekürzt',
+  'parse.empty': 'Die Datei scheint leer zu sein oder hat keine Kopfzeile.',
+  'parse.readError': 'Die Datei konnte nicht gelesen werden.',
+
+  'error.title': 'Etwas ist schiefgelaufen',
+  'error.retry': 'Erneut versuchen',
+  'error.reload': 'Neu laden',
+
+  'restore.prompt':
+    'Willkommen zurück — letzte Ansicht für diese Dateistruktur wiederherstellen?',
+  'restore.filters': '{n} Filter',
+  'restore.sorted': ' · sortiert',
+  'restore.search': ' · Suche',
+  'restore.dismiss': 'Verwerfen',
+  'restore.action': 'Letzte Ansicht wiederherstellen',
+
+  'chart.empty': '(leer)',
+  'pivot.others': '(andere)',
 
   'common.regexInvalid': 'Ungültiger regulärer Ausdruck',
 
@@ -717,6 +751,7 @@ export const de: Record<TKey, string> = {
   'tail.findings': '⚠ {n} Funde',
   'tail.findingsTitle': 'Für Details Sicherheits-Scan öffnen',
   'tail.atCap': 'Zeilenlimit erreicht — kein Anhängen mehr',
+  'tail.lostAccess': 'Zugriff auf die Datei verloren — Tailing gestoppt.',
   'tail.alertAria': 'Bei Funden hoher Schwere warnen',
   'tail.alertTitle': 'Desktop-Warnung bei neuen Funden hoher Schwere',
   'tail.alertsOn': '🔔 Warnungen an',

@@ -6,6 +6,10 @@ import { DEFAULT_TZ } from '@/lib/time/timezone';
 /** Max categories rendered per chart type before truncation. */
 const CAPS: Record<ChartType, number> = { bar: 40, line: 100, pie: 8 };
 
+/** Group key for rows whose dimension is null/empty. A stable, language-neutral
+ *  sentinel — the UI translates it at render (see `chart.empty`). */
+export const EMPTY_GROUP = '(empty)';
+
 interface GroupAcc {
   sum: number;
   count: number;
@@ -63,7 +67,7 @@ export function aggregateToMap(
     const dimCell = row[dimIdx];
     const name =
       dimCell == null
-        ? '(empty)'
+        ? EMPTY_GROUP
         : useBucket
           ? bucketDate(String(dimCell), bucket, tz, offsetMs)
           : String(dimCell);

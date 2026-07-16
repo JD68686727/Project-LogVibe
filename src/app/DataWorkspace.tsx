@@ -10,6 +10,7 @@ import { normalizeFilterGroups } from '@/lib/filter/normalizeGroups';
 import type { QuickPattern } from '@/lib/filter/patternLibrary';
 import { signatureFor } from '@/lib/storage/viewStore';
 import { getDerivedSpecs } from '@/lib/storage/derivedColumnStore';
+import { useI18n } from '@/lib/i18n/I18nContext';
 import { getLastView, setLastView } from '@/lib/storage/lastViewStore';
 import { useSortedRows } from '@/features/table/hooks/useSortedRows';
 import { DataTable } from '@/features/table/components/DataTable';
@@ -78,6 +79,7 @@ export function DataWorkspace({
   timeZone = DEFAULT_TZ,
   autoScroll,
 }: DataWorkspaceProps) {
+  const { t } = useI18n();
   const filtersApi = useFilters(dataset);
   const chart = useChartConfig(dataset, filtersApi.filteredOrder, timeZone);
   const columnView = useColumnView(dataset);
@@ -186,11 +188,11 @@ export function DataWorkspace({
       {showRestore && offered && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2.5 text-sm dark:border-brand-500/30 dark:bg-brand-500/10">
           <span className="text-slate-700 dark:text-slate-200">
-            Welcome back — restore your last view for this file structure?{' '}
+            {t('restore.prompt')}{' '}
             <span className="text-slate-400 dark:text-slate-500">
-              ({offeredFilterCount} filter{offeredFilterCount === 1 ? '' : 's'}
-              {offered.sort.length > 0 ? ' · sorted' : ''}
-              {offered.query ? ' · search' : ''})
+              ({t('restore.filters', { n: offeredFilterCount })}
+              {offered.sort.length > 0 ? t('restore.sorted') : ''}
+              {offered.query ? t('restore.search') : ''})
             </span>
           </span>
           <div className="flex shrink-0 items-center gap-2">
@@ -199,7 +201,7 @@ export function DataWorkspace({
               onClick={() => setRestoreDismissed(true)}
               className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-500 hover:bg-slate-200/60 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
             >
-              Dismiss
+              {t('restore.dismiss')}
             </button>
             <button
               type="button"
@@ -209,7 +211,7 @@ export function DataWorkspace({
               }}
               className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
             >
-              Restore last view
+              {t('restore.action')}
             </button>
           </div>
         </div>

@@ -8,6 +8,7 @@ import { splitAppended } from '@/lib/csv/splitAppended';
 import { readAppended, type FileLike, type TailReadState } from '@/lib/csv/tailReader';
 import { appendRows, MAX_ROWS } from '@/lib/csv/appendRows';
 import { getTailKeepLast } from '@/lib/storage/tailBufferStore';
+import { useI18n } from '@/lib/i18n/I18nContext';
 import { compilePattern, parseLine } from '@/lib/log/regexParser';
 
 interface CompiledPattern {
@@ -75,6 +76,7 @@ export interface UseTailFileDeps {
  * unit-tested; this hook wires the picker, initial parse, and cadence.
  */
 export function useTailFile({ addDataset, updateDataset }: UseTailFileDeps): UseTailFile {
+  const { t } = useI18n();
   const supported = typeof getPicker() === 'function';
   const [status, setStatus] = useState<TailStatus>({
     supported,
@@ -232,7 +234,7 @@ export function useTailFile({ addDataset, updateDataset }: UseTailFileDeps): Use
         setStatus((s) => ({
           ...s,
           active: false,
-          error: 'Lost access to the file — stopped tailing.',
+          error: t('tail.lostAccess'),
         }));
       }
     };
@@ -248,7 +250,7 @@ export function useTailFile({ addDataset, updateDataset }: UseTailFileDeps): Use
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [status.active, status.paused, updateDataset]);
+  }, [status.active, status.paused, updateDataset, t]);
 
   return { ...status, start, pause, resume, stop };
 }

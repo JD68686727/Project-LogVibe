@@ -1,5 +1,7 @@
+import { useMemo } from 'react';
 import type { Dataset } from '@/types/dataset';
 import type { Aggregation, ChartType, DateBucket } from '@/types/chart';
+import { EMPTY_GROUP } from '@/lib/chart/aggregate';
 import { cn } from '@/utils/cn';
 import { selectCls } from '@/utils/controls';
 import { formatInt } from '@/utils/formatNumber';
@@ -66,6 +68,16 @@ export function ChartPanel({ dataset, chart }: ChartPanelProps) {
       });
 
   const truncated = result.data.length < result.groupCount;
+
+  // The null/empty group keeps a language-neutral key in the aggregation; only
+  // its axis label is translated.
+  const data = useMemo(
+    () =>
+      result.data.map((d) =>
+        d.name === EMPTY_GROUP ? { ...d, name: t('chart.empty') } : d,
+      ),
+    [result.data, t],
+  );
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -153,7 +165,7 @@ export function ChartPanel({ dataset, chart }: ChartPanelProps) {
         </div>
       </div>
 
-      <ChartView type={config.type} data={result.data} valueLabel={valueLabel} />
+      <ChartView type={config.type} data={data} valueLabel={valueLabel} />
 
       {truncated && (
         <p className="mt-2 text-center text-xs text-slate-400 dark:text-slate-500">

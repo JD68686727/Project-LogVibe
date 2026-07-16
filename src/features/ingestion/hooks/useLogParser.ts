@@ -4,6 +4,7 @@ import type { Dataset, ParseError, ParseState } from '@/types/dataset';
 import { assembleDataset } from '@/lib/csv/assembleDataset';
 import { decodeBytes, detectEncoding, type Encoding } from '@/lib/csv/encoding';
 import { detectAdapter } from '@/lib/ingest/adapters/registry';
+import { useI18n } from '@/lib/i18n/I18nContext';
 
 // --- Configuration ----------------------------------------------------------
 
@@ -55,6 +56,7 @@ export interface UseLogParser extends ParseState {
 }
 
 export function useLogParser(): UseLogParser {
+  const { t } = useI18n();
   const [state, dispatch] = useReducer(reducer, initialState);
 
   // A token that invalidates an in-flight parse when a new file arrives.
@@ -105,7 +107,7 @@ export function useLogParser(): UseLogParser {
           errors: [
             {
               code: 'EMPTY_FILE',
-              message: 'The file appears to be empty or has no header row.',
+              message: t('parse.empty'),
             },
           ],
         });
@@ -215,14 +217,14 @@ export function useLogParser(): UseLogParser {
             errors: [
               {
                 code: 'FATAL',
-                message: e instanceof Error ? e.message : 'Could not read the file.',
+                message: e instanceof Error ? e.message : t('parse.readError'),
               },
             ],
           });
         }
       }
     })();
-  }, []);
+  }, [t]);
 
   const reset = useCallback(() => {
     runIdRef.current++; // invalidate any in-flight parse
