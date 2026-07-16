@@ -1,5 +1,6 @@
 import type { CellValue, Dataset } from '@/types/dataset';
 import type { SortKey } from '@/types/table';
+import { parseToInstant } from '@/lib/time/timezone';
 
 // One reused collator. `String.prototype.localeCompare(…, opts)` reconfigures a
 // collator on every call — pathologically slow when sorting tens of thousands of
@@ -12,9 +13,25 @@ function compareNonNull(a: CellValue, b: CellValue): number {
   if (typeof a === 'boolean' && typeof b === 'boolean') {
     return a === b ? 0 : a ? 1 : -1;
   }
-  // Strings & dates: ISO dates sort correctly lexically; `numeric` handles
-  // embedded numbers in strings (e.g. "item2" < "item10").
+  // `numeric` handles embedded numbers in strings (e.g. "item2" < "item10").
   return collator.compare(String(a), String(b));
+}
+
+/**
+ * Compares two date cells by their parsed instant, matching how filtering reads
+ * dates. Sorting them lexically only works for ISO strings — `03/01/2024` or
+ * `Dec 10 04:14:02` would otherwise sort alphabetically while the filter treats
+ * them as instants. Unparseable values sort last (after the parseable ones).
+ */
+function compareInstants(
+  ta: number | null,
+  tb: number | null,
+  a: CellValue,
+  b: CellValue,
+): number {
+  if (ta != null && tb != null) return ta - tb;
+  if (ta == null && tb == null) return collator.compare(String(a), String(b));
+  return ta == null ? 1 : -1;
 }
 
 /**
@@ -61,22 +78,43 @@ export function applyMultiSort(
   if (keys.length === 0) return baseOrder;
 
   const resolved = keys
-    .map((k) => ({
-      idx: dataset.columnIndex[k.columnKey],
-      dir: k.direction === 'asc' ? 1 : -1,
-    }))
+    .map((k) => {
+      const idx = dataset.columnIndex[k.columnKey];
+      return {
+        idx,
+        dir: k.direction === 'asc' ? 1 : -1,
+        isDate: idx != null && dataset.columns[idx].type === 'date',
+      };
+    })
     .filter((k) => k.idx != null);
   if (resolved.length === 0) return baseOrder;
 
   const { rows } = dataset;
+
+  // Parse each date column once per row rather than on every comparison
+  // (O(n) parses instead of O(n log n)).
+  const instants = new Map<number, Map<number, number | null>>();
+  for (const { idx, isDate } of resolved) {
+    if (!isDate) continue;
+    const byRow = new Map<number, number | null>();
+    for (const rowIdx of baseOrder) {
+      const v = rows[rowIdx][idx];
+      byRow.set(rowIdx, v == null ? null : parseToInstant(String(v)));
+    }
+    instants.set(idx, byRow);
+  }
+
   return [...baseOrder].sort((ia, ib) => {
-    for (const { idx, dir } of resolved) {
+    for (const { idx, dir, isDate } of resolved) {
       const va = rows[ia][idx];
       const vb = rows[ib][idx];
       if (va == null && vb == null) continue;
       if (va == null) return 1; // nulls last
       if (vb == null) return -1;
-      const cmp = compareNonNull(va, vb);
+      const byRow = isDate ? instants.get(idx) : undefined;
+      const cmp = byRow
+        ? compareInstants(byRow.get(ia) ?? null, byRow.get(ib) ?? null, va, vb)
+        : compareNonNull(va, vb);
       if (cmp !== 0) return cmp * dir;
     }
     return 0;

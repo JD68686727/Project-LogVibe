@@ -87,4 +87,28 @@ describe('applyMultiSort', () => {
       base,
     );
   });
+
+  it('sorts date columns by instant, not alphabetically', () => {
+    // Non-ISO dates: lexically "03/01/2024" < "12/25/2023", but Dec 2023 is
+    // earlier — sorting must agree with how filtering reads dates.
+    const dds = makeDataset(
+      [{ name: 'ts', key: 'ts', type: 'date' }],
+      [['03/01/2024'], ['12/25/2023'], ['06/15/2024']],
+    );
+    const out = applyMultiSort(dds, allRows(dds), [
+      { columnKey: 'ts', direction: 'asc' },
+    ]);
+    expect(out).toEqual([1, 0, 2]); // Dec'23 → Mar'24 → Jun'24
+  });
+
+  it('sorts unparseable date values last', () => {
+    const dds = makeDataset(
+      [{ name: 'ts', key: 'ts', type: 'date' }],
+      [['not a date'], ['2024-01-02'], ['2023-05-01']],
+    );
+    const out = applyMultiSort(dds, allRows(dds), [
+      { columnKey: 'ts', direction: 'asc' },
+    ]);
+    expect(out).toEqual([2, 1, 0]);
+  });
 });
