@@ -1,4 +1,5 @@
 import type { LogParseResult, LogPattern } from '@/types/logPattern';
+import { sanitizeFlags, isLikelyCatastrophic } from '@/lib/regex/safeRegex';
 
 /** Hard row cap mirroring the CSV path — protects the browser's memory. */
 const MAX_ROWS = 500_000;
@@ -9,11 +10,6 @@ const NAMED_GROUP_RE = /\(\?<([A-Za-z_]\w*)>/g;
 export type CompileResult =
   | { ok: true; re: RegExp; fields: string[] }
   | { ok: false; error: string };
-
-/** Per-line exec wants a single, stateless match — drop g/y, keep i/m/s/u. */
-function sanitizeFlags(flags: string): string {
-  return [...new Set(flags)].filter((f) => 'imsu'.includes(f)).join('');
-}
 
 /**
  * Compiles a log pattern into a RegExp plus its ordered, unique named-group
@@ -34,6 +30,13 @@ export function compilePattern(pattern: LogPattern): CompileResult {
     return {
       ok: false,
       error: 'Add at least one named group, e.g. (?<message>.*)',
+    };
+  }
+
+  if (isLikelyCatastrophic(pattern.regex)) {
+    return {
+      ok: false,
+      error: 'This pattern can backtrack catastrophically — simplify it.',
     };
   }
 

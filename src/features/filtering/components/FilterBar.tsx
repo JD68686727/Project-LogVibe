@@ -3,6 +3,7 @@ import type { Dataset } from '@/types/dataset';
 import type { ColumnFilter, FilterGroup } from '@/types/filter';
 import type { QuickPattern } from '@/lib/filter/patternLibrary';
 import { formatInt } from '@/utils/formatNumber';
+import { safeRegExp } from '@/lib/regex/safeRegex';
 import { useI18n } from '@/lib/i18n/I18nContext';
 import { FilterRow } from './FilterRow';
 import { QuickFilters } from './QuickFilters';
@@ -26,13 +27,10 @@ export interface FilterBarProps {
   totalCount: number;
 }
 
+/** Valid *and* safe — a catastrophic pattern is treated as invalid so the box
+ *  shows the error state instead of the search silently doing nothing. */
 function isValidRegex(source: string): boolean {
-  try {
-    new RegExp(source);
-    return true;
-  } catch {
-    return false;
-  }
+  return safeRegExp(source) !== null;
 }
 
 const addBtn =

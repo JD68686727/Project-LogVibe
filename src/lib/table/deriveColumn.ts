@@ -1,5 +1,6 @@
 import type { CellValue, ColumnSchema, ColumnType, Dataset } from '@/types/dataset';
 import { coerceValue } from '@/lib/csv/assembleDataset';
+import { safeRegExp } from '@/lib/regex/safeRegex';
 
 /**
  * A recipe for a computed column. Three kinds share one seam:
@@ -48,25 +49,6 @@ export interface ConcatSpec {
   template: string;
   /** Type to coerce the filled text to. Defaults to 'string'. */
   type?: ColumnType;
-}
-
-/**
- * Keeps only safe, order-independent regex flags. Drops `g`/`y` (which change
- * `String.match` to return all matches with **no capture groups**, silently
- * breaking group extraction) and any invalid flag char.
- */
-export function sanitizeFlags(flags: string | undefined): string {
-  return [...new Set(flags ?? '')].filter((f) => 'imsu'.includes(f)).join('');
-}
-
-/** Compiles a regex, returning null instead of throwing on an invalid pattern
- *  or flags — so an untrusted (share-link) spec can never crash the pipeline. */
-export function safeRegExp(pattern: string, flags?: string): RegExp | null {
-  try {
-    return new RegExp(pattern, sanitizeFlags(flags));
-  } catch {
-    return null;
-  }
 }
 
 /** Slugifies a name into a stable key, de-duped against existing keys. */
