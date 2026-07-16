@@ -20,6 +20,13 @@ describe('PATTERN_LIBRARY regexes', () => {
     expect(test('http-err', 'status 200')).toBe(false);
     expect(test('email', 'no at sign here')).toBe(false);
   });
+
+  it('bounds IPv4 octets to 0–255', () => {
+    expect(test('ipv4', 'ip 255.255.255.255')).toBe(true);
+    expect(test('ipv4', 'ip 10.1.2.3444')).toBe(false); // 4-digit octet
+    expect(test('ipv4', 'ip 999.1.1.1')).toBe(false); // > 255
+    expect(test('ipv4', 'ip 256.0.0.1')).toBe(false);
+  });
 });
 
 describe('extractMatches', () => {

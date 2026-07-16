@@ -43,6 +43,18 @@ describe('inferSchema', () => {
     expect(col.type).toBe('string');
   });
 
+  it('types a column whose values start after the first rows (non-empty sampling)', () => {
+    // Empty for the first 60 rows, then numeric — must still infer `number`.
+    const rows = [
+      ...Array.from({ length: 60 }, () => ['']),
+      ['200'],
+      ['404'],
+      ['500'],
+    ];
+    const [col] = inferSchema(['code'], rows);
+    expect(col.type).toBe('number');
+  });
+
   it('normalizes headers into keys', () => {
     const [col] = inferSchema(['Status Code'], [['200']]);
     expect(col.key).toBe('status_code');
