@@ -109,8 +109,18 @@ export function useTailFile({ addDataset, updateDataset }: UseTailFileDeps): Use
         return; // user cancelled the picker
       }
 
-      const file = await handle.getFile();
-      const { text, encoding } = await readFileSmart(file);
+      // Reading can fail (permission revoked, file moved) — surface it instead
+      // of leaving an unhandled rejection and a UI that silently does nothing.
+      let file: File;
+      let text: string;
+      let encoding: Encoding;
+      try {
+        file = await handle.getFile();
+        ({ text, encoding } = await readFileSmart(file));
+      } catch {
+        setStatus((s) => ({ ...s, error: t('tail.openFailed') }));
+        return;
+      }
       // Hold back a partial trailing line so appends continue it cleanly.
       const { lines, remainder } = splitAppended('', text);
 
@@ -169,7 +179,7 @@ export function useTailFile({ addDataset, updateDataset }: UseTailFileDeps): Use
         error: null,
       });
     },
-    [addDataset],
+    [addDataset, t],
   );
 
   const pause = useCallback(() => setStatus((s) => ({ ...s, paused: true })), []);

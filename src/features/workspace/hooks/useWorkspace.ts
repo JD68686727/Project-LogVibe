@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { ColumnType, Dataset } from '@/types/dataset';
 import type { LoadedFile } from '@/types/workspace';
 import { retypeColumn, applyTypeOverrides } from '@/lib/table/retypeColumn';
@@ -45,6 +45,13 @@ export function useWorkspace(): UseWorkspace {
   const [files, setFiles] = useState<LoadedFile[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
 
+  // Mirrors `files` so the actions below can read the current dataset *outside*
+  // their state updater. Updaters must stay pure — React may re-invoke them
+  // (StrictMode, concurrent rendering), which would double-write localStorage.
+  const filesRef = useRef<LoadedFile[]>(files);
+  filesRef.current = files;
+  const fileById = (id: string) => filesRef.current.find((f) => f.id === id);
+
   const addDataset = useCallback((dataset: Dataset) => {
     // Re-apply any type overrides + computed columns remembered for this structure.
     const overrides = getColumnOverrides(dataset);
@@ -80,61 +87,56 @@ export function useWorkspace(): UseWorkspace {
 
   const setColumnType = useCallback(
     (fileId: string, columnKey: string, type: ColumnType) => {
+      const file = fileById(fileId);
+      if (!file) return;
+      setColumnOverride(file.dataset, columnKey, type); // keyed by stable column keys
       setFiles((prev) =>
-        prev.map((f) => {
-          if (f.id !== fileId) return f;
-          setColumnOverride(f.dataset, columnKey, type); // keyed by stable column keys
-          return { ...f, dataset: retypeColumn(f.dataset, columnKey, type) };
-        }),
+        prev.map((f) =>
+          f.id === fileId ? { ...f, dataset: retypeColumn(f.dataset, columnKey, type) } : f,
+        ),
       );
     },
     [],
   );
 
   const addDerivedColumn = useCallback((fileId: string, spec: DerivedSpec) => {
-    setFiles((prev) =>
-      prev.map((f) => {
-        if (f.id !== fileId) return f;
-        const dataset = deriveColumn(f.dataset, spec);
-        if (dataset === f.dataset) return f; // no-op (missing source column)
-        const newKey = dataset.columns[dataset.columns.length - 1].key;
-        addDerivedSpec(f.dataset, newKey, spec); // remember for re-open
-        return { ...f, dataset };
-      }),
-    );
+    const file = fileById(fileId);
+    if (!file) return;
+    const dataset = deriveColumn(file.dataset, spec);
+    if (dataset === file.dataset) return; // no-op (missing source / bad regex)
+    const newKey = dataset.columns[dataset.columns.length - 1].key;
+    addDerivedSpec(file.dataset, newKey, spec); // remember for re-open
+    setFiles((prev) => prev.map((f) => (f.id === fileId ? { ...f, dataset } : f)));
   }, []);
 
   const removeColumn = useCallback((fileId: string, columnKey: string) => {
+    const file = fileById(fileId);
+    if (!file) return;
+    removeDerivedSpec(file.dataset, columnKey);
     setFiles((prev) =>
-      prev.map((f) => {
-        if (f.id !== fileId) return f;
-        removeDerivedSpec(f.dataset, columnKey);
-        return { ...f, dataset: dropColumn(f.dataset, columnKey) };
-      }),
+      prev.map((f) =>
+        f.id === fileId ? { ...f, dataset: dropColumn(f.dataset, columnKey) } : f,
+      ),
     );
   }, []);
 
   const applyDerivedSpecs = useCallback((fileId: string, specs: DerivedSpec[]) => {
     if (specs.length === 0) return;
-    setFiles((prev) =>
-      prev.map((f) => {
-        if (f.id !== fileId) return f;
-        // Skip recipes already applied to this file (idempotent re-apply).
-        const present = new Set(
-          getDerivedSpecs(f.dataset).map((s) => JSON.stringify(s)),
-        );
-        let dataset = f.dataset;
-        for (const spec of specs) {
-          if (present.has(JSON.stringify(spec))) continue;
-          const next = deriveColumn(dataset, spec);
-          if (next === dataset) continue; // missing source column
-          const newKey = next.columns[next.columns.length - 1].key;
-          addDerivedSpec(f.dataset, newKey, spec);
-          dataset = next;
-        }
-        return dataset === f.dataset ? f : { ...f, dataset };
-      }),
-    );
+    const file = fileById(fileId);
+    if (!file) return;
+    // Skip recipes already applied to this file (idempotent re-apply).
+    const present = new Set(getDerivedSpecs(file.dataset).map((s) => JSON.stringify(s)));
+    let dataset = file.dataset;
+    for (const spec of specs) {
+      if (present.has(JSON.stringify(spec))) continue;
+      const next = deriveColumn(dataset, spec);
+      if (next === dataset) continue; // missing source / bad regex
+      const newKey = next.columns[next.columns.length - 1].key;
+      addDerivedSpec(file.dataset, newKey, spec);
+      dataset = next;
+    }
+    if (dataset === file.dataset) return;
+    setFiles((prev) => prev.map((f) => (f.id === fileId ? { ...f, dataset } : f)));
   }, []);
 
   // Derive the active file with a fallback so removing the active one (which
