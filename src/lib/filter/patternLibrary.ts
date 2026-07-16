@@ -21,8 +21,10 @@ export interface QuickPattern {
 export const PATTERN_LIBRARY: QuickPattern[] = [
   {
     id: 'ipv4',
+    // Octets bounded to 0–255 so "10.1.2.3444" or "999.1.1.1" don't false-match.
     label: 'filter.pattern.ipv4.label',
-    regex: '\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b',
+    regex:
+      '\\b(?:(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.){3}(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\b',
     hint: 'filter.pattern.ipv4.hint',
   },
   {

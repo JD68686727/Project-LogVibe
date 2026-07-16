@@ -158,6 +158,7 @@ export const en = {
 
   'share.view': 'Share view',
   'share.copied': 'Link copied!',
+  'share.note': 'The link carries your filters, search and view settings — but never any row data.',
 
   'preset.saved': 'Saved views',
   'preset.none': 'none yet — configure filters/chart, then save',
@@ -581,6 +582,7 @@ export const de: Record<TKey, string> = {
 
   'share.view': 'Ansicht teilen',
   'share.copied': 'Link kopiert!',
+  'share.note': 'Der Link enthält deine Filter, Suche und Ansichtseinstellungen — aber nie Zeilendaten.',
 
   'preset.saved': 'Gespeicherte Ansichten',
   'preset.none': 'noch keine — Filter/Chart einrichten, dann speichern',

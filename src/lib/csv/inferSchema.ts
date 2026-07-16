@@ -17,9 +17,10 @@ export function classify(value: string): ColumnType {
 }
 
 /**
- * Infers a column type per column by sampling the first N non-empty rows.
- * Sampling (not full scan) keeps inference O(columns × sampleSize) instead of
- * O(columns × rowCount) — essential for large files.
+ * Infers a column type per column by sampling up to `sampleSize` **non-empty**
+ * values, scanning at most `sampleSize × 20` rows so a sparse column whose data
+ * starts late still gets typed correctly — without forcing a full-file pass.
+ * Keeps inference bounded (essential for large files).
  */
 export function inferSchema(
   rawHeaders: string[],
@@ -27,7 +28,7 @@ export function inferSchema(
   sampleSize = 50,
 ): ColumnSchema[] {
   const headers = normalizeHeaders(rawHeaders);
-  const sample = sampleRows.slice(0, sampleSize);
+  const scanLimit = Math.min(sampleRows.length, sampleSize * 20);
 
   return headers.map(({ name, key }, colIdx) => {
     const votes: Record<ColumnType, number> = {
@@ -37,10 +38,12 @@ export function inferSchema(
       date: 0,
     };
 
-    for (const row of sample) {
-      const cell = row[colIdx];
+    let seen = 0;
+    for (let r = 0; r < scanLimit && seen < sampleSize; r++) {
+      const cell = sampleRows[r][colIdx];
       if (cell == null || cell.trim() === '') continue;
       votes[classify(cell)] += 1;
+      seen += 1;
     }
 
     // Pick the winning type; default to string when there's no signal.

@@ -1,5 +1,6 @@
 import type { Dataset } from '@/types/dataset';
 import type { Finding } from '@/lib/analysis/findings';
+import { parseToInstant } from '@/lib/time/timezone';
 import { cellText, guessColumn, rowText, IP_NEEDLES, TIME_NEEDLES } from '../util';
 
 export interface BruteForceOptions {
@@ -41,8 +42,11 @@ export function bruteForce(
     if (!FAIL_RE.test(rowText(row))) continue;
     const ip = cellText(row[ipCol]);
     if (!ip) continue;
-    const t = Date.parse(cellText(row[timeCol]));
-    if (Number.isNaN(t)) continue;
+    // parseToInstant treats a naive timestamp as UTC (deterministic, and
+    // consistent with how the table/charts read dates) and honours an explicit
+    // offset — unlike Date.parse, which reads naive times as engine-local.
+    const t = parseToInstant(cellText(row[timeCol]));
+    if (t == null) continue;
     const arr = byIp.get(ip);
     if (arr) arr.push(t);
     else byIp.set(ip, [t]);
