@@ -7,6 +7,8 @@ import { decodeBytes, readFileSmart, type Encoding } from '@/lib/csv/encoding';
 import { splitAppended } from '@/lib/csv/splitAppended';
 import { readAppended, type FileLike, type TailReadState } from '@/lib/csv/tailReader';
 import { appendRows, MAX_ROWS } from '@/lib/csv/appendRows';
+import { recomputeDerived } from '@/lib/table/deriveColumn';
+import { getDerivedSpecs } from '@/lib/storage/derivedColumnStore';
 import { getTailKeepLast } from '@/lib/storage/tailBufferStore';
 import { useI18n } from '@/lib/i18n/I18nContext';
 import { compilePattern, parseLine } from '@/lib/log/regexParser';
@@ -38,6 +40,18 @@ function parseLines(
 }
 
 const POLL_MS = 1000;
+
+/** Appends raw rows, then refreshes any computed columns so tail-appended rows
+ *  get real derived values instead of null (robust to ring-buffer eviction). */
+function appendWithDerived(
+  prev: Dataset,
+  rawRows: string[][],
+  keepLast: number | null,
+): Dataset {
+  const grown = appendRows(prev, rawRows, MAX_ROWS, keepLast ?? undefined).dataset;
+  const specs = getDerivedSpecs(prev);
+  return specs.length ? recomputeDerived(grown, specs) : grown;
+}
 
 type FilePicker = (options?: unknown) => Promise<FileLike[]>;
 function getPicker(): FilePicker | undefined {
@@ -216,10 +230,7 @@ export function useTailFile({ addDataset, updateDataset }: UseTailFileDeps): Use
         const keepLast = keepLastRef.current;
         if (keepLast != null) {
           rowCountRef.current = Math.min(rowCountRef.current + parsed.length, keepLast);
-          updateDataset(
-            fileId,
-            (prev) => appendRows(prev, parsed, MAX_ROWS, keepLast).dataset,
-          );
+          updateDataset(fileId, (prev) => appendWithDerived(prev, parsed, keepLast));
           return;
         }
 
@@ -233,7 +244,7 @@ export function useTailFile({ addDataset, updateDataset }: UseTailFileDeps): Use
         }
         const toAdd = parsed.length > room ? parsed.slice(0, room) : parsed;
         rowCountRef.current += toAdd.length;
-        updateDataset(fileId, (prev) => appendRows(prev, toAdd).dataset);
+        updateDataset(fileId, (prev) => appendWithDerived(prev, toAdd, null));
         if (toAdd.length < parsed.length && !atCapRef.current) {
           atCapRef.current = true;
           setStatus((s) => ({ ...s, atCap: true }));
