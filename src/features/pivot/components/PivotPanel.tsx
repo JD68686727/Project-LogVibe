@@ -114,6 +114,11 @@ export function PivotPanel({
 
   const capped = result != null && (result.rowHasOthers || result.colHasOthers);
 
+  /** The "(others)" bucket keeps its sentinel value for logic; only the axis
+   *  label is translated. */
+  const axisLabel = (value: string) =>
+    value === OTHERS_BUCKET ? t('pivot.others') : value;
+
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <button
@@ -241,7 +246,7 @@ export function PivotPanel({
                       <th className={corner}>{valueLabel}</th>
                       {result.colValues.map((cv) => (
                         <th key={cv} className={colHead}>
-                          {cv}
+                          {axisLabel(cv)}
                         </th>
                       ))}
                       <th className={cn(colHead, 'text-brand-700 dark:text-brand-300')}>
@@ -254,8 +259,8 @@ export function PivotPanel({
                       const rowReal = !(result.rowHasOthers && rv === OTHERS_BUCKET);
                       return (
                         <tr key={rv}>
-                          <th scope="row" className={rowHead} title={rv}>
-                            {rv}
+                          <th scope="row" className={rowHead} title={axisLabel(rv)}>
+                            {axisLabel(rv)}
                           </th>
                           {result.colValues.map((cv, ci) => {
                             const value = result.cells[ri][ci];

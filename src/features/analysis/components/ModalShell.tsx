@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { useI18n } from '@/lib/i18n/I18nContext';
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -23,6 +24,7 @@ export function ModalShell({
   footer,
   children,
 }: ModalShellProps) {
+  const { t } = useI18n();
   const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -69,7 +71,7 @@ export function ModalShell({
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-auto p-4 sm:p-8">
       <button
         type="button"
-        aria-label="Close"
+        aria-label={t('common.close')}
         onClick={onClose}
         className="fixed inset-0 bg-slate-900/40 backdrop-blur-[1px]"
       />
@@ -94,7 +96,7 @@ export function ModalShell({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('common.close')}
             className="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
           >
             ✕

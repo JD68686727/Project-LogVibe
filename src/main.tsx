@@ -12,10 +12,11 @@ if (!rootEl) {
 
 createRoot(rootEl).render(
   <StrictMode>
-    <ErrorBoundary>
-      <I18nProvider>
+    {/* i18n wraps the boundary so its fallback can be translated too. */}
+    <I18nProvider>
+      <ErrorBoundary>
         <App />
-      </I18nProvider>
-    </ErrorBoundary>
+      </ErrorBoundary>
+    </I18nProvider>
   </StrictMode>,
 );

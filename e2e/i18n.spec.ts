@@ -20,7 +20,7 @@ test('i18n: switching to German translates the UI, and it persists', async ({
   await expect(panel.getByRole('heading', { name: 'Einstellungen' })).toBeVisible();
   // Numbers follow the language: the buffer option groups as 50.000 (not 50,000).
   await expect(panel.getByRole('option', { name: 'Letzte 50.000' })).toBeAttached();
-  await page.getByRole('button', { name: 'Schließen' }).click();
+  await page.keyboard.press('Escape'); // close the dialog
   await expect(
     page.getByText('Datenschutz-first, lokaler CSV- & Log-Analyzer'),
   ).toBeVisible();
@@ -47,7 +47,7 @@ test('i18n: the filter bar is translated after switching to German', async ({
 
   await page.getByRole('button', { name: 'Settings' }).click();
   await page.getByTestId('settings-panel').getByLabel('Language').selectOption('de');
-  await page.getByRole('button', { name: 'Schließen' }).click();
+  await page.keyboard.press('Escape'); // close the dialog
 
   // Filter bar: row count, quick-filters button, and add-filter all in German.
   await expect(page.getByText('15 von 15 Zeilen')).toBeVisible();
@@ -76,7 +76,7 @@ test('i18n: the filter bar is translated after switching to German', async ({
   const scan = page.getByTestId('security-scan');
   await expect(scan.getByText('Profile', { exact: true })).toBeVisible();
   await expect(scan.getByText('Brute-Force-Anmeldeversuche')).toBeVisible();
-  await scan.getByRole('button', { name: 'Schließen' }).click();
+  await page.keyboard.press('Escape'); // close the dialog
 
   // Custom-log pattern builder is translated.
   await page.getByRole('button', { name: '+ Eigenes Log' }).click();
@@ -101,7 +101,7 @@ test('i18n: the compare view is translated after switching to German', async ({
 
   await page.getByRole('button', { name: 'Settings' }).click();
   await page.getByTestId('settings-panel').getByLabel('Language').selectOption('de');
-  await page.getByRole('button', { name: 'Schließen' }).click();
+  await page.keyboard.press('Escape'); // close the dialog
 
   await page.getByRole('button', { name: 'Vergleichen' }).click();
   await expect(page.getByText('Dateien', { exact: true })).toBeVisible();

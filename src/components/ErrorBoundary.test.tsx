@@ -3,11 +3,15 @@ import '@testing-library/jest-dom/vitest';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { I18nProvider } from '@/lib/i18n/I18nContext';
 import { ErrorBoundary } from './ErrorBoundary';
 
 function Boom(): never {
   throw new Error('kaboom');
 }
+
+// The app mounts the boundary inside I18nProvider so its fallback is translated.
+const wrapper = I18nProvider;
 
 beforeEach(() => {
   // React logs caught errors; keep test output clean.
@@ -23,6 +27,7 @@ describe('ErrorBoundary', () => {
       <ErrorBoundary>
         <p>all good</p>
       </ErrorBoundary>,
+      { wrapper },
     );
     expect(screen.getByText('all good')).toBeInTheDocument();
   });
@@ -32,6 +37,7 @@ describe('ErrorBoundary', () => {
       <ErrorBoundary>
         <Boom />
       </ErrorBoundary>,
+      { wrapper },
     );
     expect(screen.getByRole('alert')).toBeInTheDocument();
     expect(screen.getByText('kaboom')).toBeInTheDocument();
@@ -43,6 +49,7 @@ describe('ErrorBoundary', () => {
       <ErrorBoundary fallback={(error) => <p>custom: {error.message}</p>}>
         <Boom />
       </ErrorBoundary>,
+      { wrapper },
     );
     expect(screen.getByText('custom: kaboom')).toBeInTheDocument();
   });
@@ -59,6 +66,7 @@ describe('ErrorBoundary', () => {
       <ErrorBoundary>
         <Maybe />
       </ErrorBoundary>,
+      { wrapper },
     );
 
     expect(screen.getByRole('alert')).toBeInTheDocument();
